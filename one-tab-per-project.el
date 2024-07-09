@@ -65,10 +65,19 @@ The current tab is supplied as an argument."
 
 ;;; API
 
+;;;###autoload
 (defun otpp-change-tab-root-dir (dir &optional tab-number)
   "Change the `otpp-root-dir' attribute to DIR.
 If if the absolete TAB-NUMBER is provided, set it, otherwise, set the
-current tab."
+current tab.
+When DIR is empty, delete it from the tab."
+  (interactive
+   (list (completing-read
+          "Root directory for tab (leave blank to remove the tab root directory): "
+          (delete-dups
+           (delq nil (mapcar (apply-partially #'alist-get 'otpp-root-dir)
+                             (funcall tab-bar-tabs-function)))))
+         current-prefix-arg))
   (let* ((dir (expand-file-name dir))
          (tabs (funcall tab-bar-tabs-function))
          (index (if tab-number
@@ -85,16 +94,16 @@ current tab."
     (otpp--update-all-tabs) ; Update all tabs
     (run-hook-with-args 'otpp-post-change-tab-root-functions tab)))
 
-(defun otpp-find-tab-by-root-dir (dir)
-  "Find the first tab that have DIR as `otpp-root-dir' attribute."
-  (seq-find
+(defun otpp-find-tabs-by-root-dir (dir)
+  "Return a list of tabs that have DIR as `otpp-root-dir' attribute."
+  (seq-filter
    (lambda (tab) (equal (expand-file-name dir) (alist-get 'otpp-root-dir tab)))
    (funcall tab-bar-tabs-function)))
 
 (defun otpp-select-or-create-tab-root-dir (dir)
   "Select or create the tab with root directory DIR.
 Returns non-nil if a new tab was created, and nil otherwise."
-  (if-let ((tab (otpp-find-tab-by-root-dir dir)))
+  (if-let ((tab (car (otpp-find-tabs-by-root-dir dir))))
       (prog1 nil
         (tab-bar-select-tab (1+ (tab-bar--tab-index tab))))
     (tab-bar-new-tab)
@@ -125,7 +134,7 @@ Otherwise, select or create the tab represents the selected project."
       (let ((curr-tab-root-dir (alist-get 'otpp-root-dir (tab-bar--current-tab)))
             (target-proj-root-dir (expand-file-name proj-dir)))
         (unless (equal curr-tab-root-dir target-proj-root-dir)
-          (if (or curr-tab-root-dir (otpp-find-tab-by-root-dir target-proj-root-dir) otpp-preserve-non-otpp-tab)
+          (if (or curr-tab-root-dir (otpp-find-tabs-by-root-dir target-proj-root-dir) otpp-preserve-non-otpp-tab)
               (otpp-select-or-create-tab-root-dir target-proj-root-dir)
             (otpp-change-tab-root-dir target-proj-root-dir)))))
     proj-curr))
