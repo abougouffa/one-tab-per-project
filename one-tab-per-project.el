@@ -63,6 +63,8 @@ The current tab is supplied as an argument."
           (setcdr explicit-name 'otpp))))) ; Set the `explicit-name' to `otpp'
   (force-mode-line-update))
 
+;;; API
+
 (defun otpp-change-tab-root-dir (dir &optional tab-number)
   "Change the `otpp-root-dir' attribute to DIR.
 If if the absolete TAB-NUMBER is provided, set it, otherwise, set the
@@ -83,16 +85,16 @@ current tab."
     (otpp--update-all-tabs) ; Update all tabs
     (run-hook-with-args 'otpp-post-change-tab-root-functions tab)))
 
-(defun otpp--find-tab-by-root-dir (dir)
+(defun otpp-find-tab-by-root-dir (dir)
   "Find the first tab that have DIR as `otpp-root-dir' attribute."
   (seq-find
    (lambda (tab) (equal (expand-file-name dir) (alist-get 'otpp-root-dir tab)))
    (funcall tab-bar-tabs-function)))
 
-(defun otpp--select-or-create-tab-root-dir (dir)
+(defun otpp-select-or-create-tab-root-dir (dir)
   "Select or create the tab with root directory DIR.
 Returns non-nil if a new tab was created, and nil otherwise."
-  (if-let ((tab (otpp--find-tab-by-root-dir dir)))
+  (if-let ((tab (otpp-find-tab-by-root-dir dir)))
       (prog1 nil
         (tab-bar-select-tab (1+ (tab-bar--tab-index tab))))
     (tab-bar-new-tab)
@@ -123,8 +125,8 @@ Otherwise, select or create the tab represents the selected project."
       (let ((curr-tab-root-dir (alist-get 'otpp-root-dir (tab-bar--current-tab)))
             (target-proj-root-dir (expand-file-name proj-dir)))
         (unless (equal curr-tab-root-dir target-proj-root-dir)
-          (if (or curr-tab-root-dir (otpp--find-tab-by-root-dir target-proj-root-dir) otpp-preserve-non-otpp-tab)
-              (otpp--select-or-create-tab-root-dir target-proj-root-dir)
+          (if (or curr-tab-root-dir (otpp-find-tab-by-root-dir target-proj-root-dir) otpp-preserve-non-otpp-tab)
+              (otpp-select-or-create-tab-root-dir target-proj-root-dir)
             (otpp-change-tab-root-dir target-proj-root-dir)))))
     proj-curr))
 
@@ -132,7 +134,7 @@ Otherwise, select or create the tab represents the selected project."
   "Switch to the selected project's tab if it exists.
 Call ORIG-FN with ARGS otherwise."
   (let ((proj-dir (expand-file-name (or (car args) (funcall project-prompter)))))
-    (if (otpp--select-or-create-tab-root-dir proj-dir)
+    (if (otpp-select-or-create-tab-root-dir proj-dir)
         (funcall orig-fn proj-dir)
       (if (not (file-in-directory-p default-directory proj-dir))
           (if (functionp otpp-reconnect-tab)
@@ -143,10 +145,9 @@ Call ORIG-FN with ARGS otherwise."
 (defun otpp--project-kill-buffers-a (orig-fn &rest args)
   "Call ORIG-FN with ARGS, then close the current tab group, if any."
   (when (apply orig-fn args)
-    (when-let* ((curr-tab (tab-bar--current-tab))
-                (root-dir (alist-get 'otpp-root-dir curr-tab)))
+    (when-let ((curr-tab-root-dir (alist-get 'otpp-root-dir (tab-bar--current-tab))))
       (tab-bar-close-tab)
-      (unique-dir-name-unregister root-dir :map 'otpp--unique-tabs-map)
+      (unique-dir-name-unregister curr-tab-root-dir :map 'otpp--unique-tabs-map)
       (otpp--update-all-tabs))))
 
 ;;;###autoload
