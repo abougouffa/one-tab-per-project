@@ -49,8 +49,11 @@ When non-nil, show the project dispatch menu instead."
   (dolist (tab (funcall tab-bar-tabs-function))
     (when-let* ((path (alist-get 'otpp-root-dir tab))
                 (unique (gethash path otpp--unique-tabs-map)))
-      (setcdr (assoc 'name tab) (alist-get 'unique-name unique))
-      (setcdr (assoc 'explicit-name tab) t)))
+      (let ((explicit-name (assoc 'explicit-name tab)))
+        ;; Don't update the tab name if it was renamed explicitly using `tab-bar-rename-tab'
+        (unless (eq (cdr explicit-name) t)
+          (setcdr (assoc 'name tab) (alist-get 'unique-name unique))
+          (setcdr explicit-name 'otpp))))) ; Set the `explicit-name' to `otpp'
   (force-mode-line-update))
 
 (defun otpp-change-tab-root-dir (dir &optional tab-number)
