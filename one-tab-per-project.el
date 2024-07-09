@@ -5,7 +5,7 @@
 ;; Author: Abdelhak Bougouffa  (rot13 "nobhtbhssn@srqbencebwrpg.bet")
 ;; URL: https://github.com/abougouffa/one-tab-per-project
 ;; Version: 0.2.0
-;; Package-Requires: ((emacs "28.1") (unique-dir-name "0.0.1"))
+;; Package-Requires: ((emacs "28.1") (unique-dir-name "1.0.0"))
 ;; Keywords: convenience
 
 ;;; Commentary:
@@ -63,6 +63,22 @@ The current tab is supplied as an argument."
           (setcdr explicit-name 'otpp))))) ; Set the `explicit-name' to `otpp'
   (force-mode-line-update))
 
+;;;###autoload(put 'project-name 'safe-local-variable 'stringp)
+;;;###autoload(put 'otpp-project-name 'safe-local-variable 'stringp)
+
+(defun otpp--get-project-base-name (dir)
+  (with-temp-buffer
+    (setq default-directory dir)
+    (when-let* ((pr (project-current))
+                (root (project-root pr))
+                (dir-locals-root (car (dir-locals-find-file default-directory)))
+                (_ (string= (expand-file-name root) (expand-file-name dir-locals-root)))) ; The .dir-locals.el file is in the project's root
+      (hack-dir-local-variables-non-file-buffer)
+      (let ((name (or (bound-and-true-p otpp-project-name)
+                      (bound-and-true-p project-name)
+                      (and (fboundp 'project-name) (project-name pr)))))
+        name))))
+
 ;;; API
 
 ;;;###autoload
@@ -90,7 +106,7 @@ When DIR is empty, delete it from the tab."
         (setcdr root-dir tab-new-root-dir)
       (nconc tab `((otpp-root-dir . ,tab-new-root-dir)))
       ;; Register in the unique names hash-table
-      (unique-dir-name-register dir :map 'otpp--unique-tabs-map))
+      (unique-dir-name-register dir :base (otpp--get-project-base-name dir) :map 'otpp--unique-tabs-map))
     (otpp--update-all-tabs) ; Update all tabs
     (run-hook-with-args 'otpp-post-change-tab-root-functions tab)))
 
