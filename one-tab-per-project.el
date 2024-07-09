@@ -40,6 +40,13 @@ When non-nil, show the project dispatch menu instead."
   :type '(choice function boolean)
   :group 'otpp)
 
+(defcustom tab-bar-tab-post-change-group-functions nil
+  "List of functions to call after changing the `otpp-root-dir' of a tab.
+This hook is run at the end of the function `otpp-change-tab-root-dir'.
+The current tab is supplied as an argument."
+  :type 'hook
+  :group 'otpp)
+
 ;;; Internals and helpers
 
 (defvar otpp--unique-tabs-map (make-hash-table :test 'equal))
