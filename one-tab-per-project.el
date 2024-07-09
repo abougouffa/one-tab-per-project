@@ -146,12 +146,11 @@ Call ORIG-FN with ARGS otherwise."
   "Automatically create a tab per project, name them uniquely."
   :group 'otpp
   :global t
-  (dolist (name '(current switch-project kill-buffers))
-    (let* ((func (intern (format "project-%s" name)))
-           (advice (intern (format "otpp--%s-a" func))))
+  (dolist (fn '(project-current project-switch-project project-kill-buffers))
+    (let ((advice-fn (intern (format "otpp--%s-a" fn))))
       (if otpp-mode
-          (advice-add func :around advice)
-        (advice-remove func advice)))))
+          (advice-add fn :around advice-fn)
+        (advice-remove fn advice-fn)))))
 
 ;;;###autoload
 (defalias 'one-tab-per-project-mode 'otpp-mode)
