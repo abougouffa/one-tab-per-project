@@ -4,7 +4,7 @@
 
 ;; Author: Abdelhak Bougouffa  (rot13 "nobhtbhssn@srqbencebwrpg.bet")
 ;; URL: https://github.com/abougouffa/one-tab-per-project
-;; Version: 0.1
+;; Version: 0.2.0
 ;; Package-Requires: ((emacs "28.1") (unique-dir-name "0.0.1"))
 ;; Keywords: convenience
 
