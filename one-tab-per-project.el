@@ -67,16 +67,19 @@ The current tab is supplied as an argument."
   "Change the `otpp-root-dir' attribute to DIR.
 If if the absolete TAB-NUMBER is provided, set it, otherwise, set the
 current tab."
-  (let* ((tabs (funcall tab-bar-tabs-function))
+  (let* ((dir (expand-file-name dir))
+         (tabs (funcall tab-bar-tabs-function))
          (index (if tab-number
                     (1- (max 0 (min tab-number (length tabs))))
                   (tab-bar--current-tab-index tabs)))
          (tab (nth index tabs))
          (root-dir (assq 'otpp-root-dir tab))
-         (tab-new-root-dir (and (not (string-empty-p dir)) (expand-file-name dir))))
+         (tab-new-root-dir (and (not (string-empty-p dir)) dir)))
     (if root-dir
         (setcdr root-dir tab-new-root-dir)
-      (nconc tab `((otpp-root-dir . ,tab-new-root-dir))))
+      (nconc tab `((otpp-root-dir . ,tab-new-root-dir)))
+      ;; Register in the unique names hash-table
+      (unique-dir-name-register dir :map 'otpp--unique-tabs-map))
     (otpp--update-all-tabs) ; Update all tabs
     (run-hook-with-args 'otpp-post-change-tab-root-functions tab)))
 
@@ -93,8 +96,6 @@ Returns non-nil if a new tab was created, and nil otherwise."
       (prog1 nil
         (tab-bar-select-tab (1+ (tab-bar--tab-index tab))))
     (tab-bar-new-tab)
-    ;; Register in the unique names hash-table
-    (unique-dir-name-register dir :map 'otpp--unique-tabs-map)
     (otpp-change-tab-root-dir dir) ; Set the root directory for the current tab
     t))
 
@@ -130,7 +131,7 @@ Otherwise, select or create the tab represents the selected project."
 (defun otpp--project-switch-project-a (orig-fn &rest args)
   "Switch to the selected project's tab if it exists.
 Call ORIG-FN with ARGS otherwise."
-  (let* ((proj-dir (or (car args) (funcall project-prompter))))
+  (let ((proj-dir (or (car args) (funcall project-prompter))))
     (if (otpp--select-or-create-tab-root-dir proj-dir)
         (funcall orig-fn proj-dir)
       (if (not (file-in-directory-p default-directory proj-dir))
