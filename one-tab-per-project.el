@@ -55,7 +55,7 @@ repos inside, etc)."
   :group 'otpp
   :type '(choice function boolean))
 
-(defcustom tab-bar-tab-post-change-group-functions nil
+(defcustom otpp-post-change-tab-root-functions nil
   "List of functions to call after changing the `otpp-root-dir' of a tab.
 This hook is run at the end of the function `otpp-change-tab-root-dir'.
 The current tab is supplied as an argument."
