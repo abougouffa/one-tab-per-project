@@ -71,7 +71,7 @@ The current tab is supplied as an argument."
     (setq default-directory dir)
     (when-let* ((pr (project-current))
                 (root (project-root pr))
-                (dir-locals-root (car (dir-locals-find-file default-directory)))
+                (dir-locals-root (car (ensure-list (dir-locals-find-file default-directory))))
                 (_ (string= (expand-file-name root) (expand-file-name dir-locals-root)))) ; The .dir-locals.el file is in the project's root
       (hack-dir-local-variables-non-file-buffer)
       (let ((name (or (bound-and-true-p otpp-project-name)
