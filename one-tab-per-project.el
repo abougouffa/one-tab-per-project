@@ -26,8 +26,8 @@
 
 (defcustom otpp-preserve-non-otpp-tab t
   "When non-nil, preserve the current rootless tab when switching projects."
-  :type 'boolean
-  :group 'otpp)
+  :group 'otpp
+  :type 'boolean)
 
 (defcustom otpp-reconnect-tab t
   "Whether to reconnect a disconnected tab when switching to it.
@@ -37,15 +37,30 @@ with the switched-to project's root directory as its single
 argument.
 
 When non-nil, show the project dispatch menu instead."
-  :type '(choice function boolean)
-  :group 'otpp)
+  :group 'otpp
+  :type '(choice function boolean))
+
+(defcustom otpp-strictly-obey-dir-locals nil
+  "Whether to strictly obey local variables.
+
+Set a nil (default value) for only respect the variables when the
+are defined in the project root.
+
+Set to a function that takes (DIR PROJECT-ROOT DIR-LOCALS-ROOT),
+see `otpp--get-project-base-name'.
+
+This can be useful when the project includes sub-projects (a Git
+repository with sub-modules, a Git repository with other Git
+repos inside, etc)."
+  :group 'otpp
+  :type '(choice function boolean))
 
 (defcustom tab-bar-tab-post-change-group-functions nil
   "List of functions to call after changing the `otpp-root-dir' of a tab.
 This hook is run at the end of the function `otpp-change-tab-root-dir'.
 The current tab is supplied as an argument."
-  :type 'hook
-  :group 'otpp)
+  :group 'otpp
+  :type 'hook)
 
 ;;; Internals and helpers
 
@@ -67,17 +82,45 @@ The current tab is supplied as an argument."
 ;;;###autoload(put 'otpp-project-name 'safe-local-variable 'stringp)
 
 (defun otpp--get-project-base-name (dir)
+  "Get the project name from DIR.
+
+This extracts the project root and finds a `dir-locals-file' file
+that can be applied to the directory DIR, the local variables are
+read if any of these conditions is correct:
+
+- `otpp-strictly-obey-dir-locals' is a function, and calling it
+  returns non-nil (we pass to this function the DIR, project root
+  and the directory containing the `dir-locals-file'.
+- `otpp-strictly-obey-dir-locals' is a *not* a function and it is
+  non-nil.
+- The `dir-locals-file' is strored in the project root, a.k.a.,
+  the project root is the same as the `dir-locals-file'
+  directory.
+
+Then, this function checks in this order:
+
+1. If the local variable `otpp-project-name' is bound and
+   contains a value, use it as project name.
+2. Same with the local variable `project-name'.
+3. If the function `project-name' is defined, call it on the
+   current project."
   (with-temp-buffer
     (setq default-directory dir)
     (when-let* ((pr (project-current))
-                (root (project-root pr))
-                (dir-locals-root (car (ensure-list (dir-locals-find-file default-directory))))
-                (_ (string= (expand-file-name root) (expand-file-name dir-locals-root)))) ; The .dir-locals.el file is in the project's root
-      (hack-dir-local-variables-non-file-buffer)
-      (let ((name (or (bound-and-true-p otpp-project-name)
-                      (bound-and-true-p project-name)
-                      (and (fboundp 'project-name) (project-name pr)))))
-        name))))
+                (root (project-root pr)))
+      ;; When can find a `dir-locals-file' that can be applied to files inside
+      ;; `dir', we do some extra checks to determine if we should take it into
+      ;; account or not.
+      (let ((dir-locals-root (car (ensure-list (dir-locals-find-file (expand-file-name "dummy-file" dir))))))
+        (when (and dir-locals-root
+                   (or (if (functionp otpp-strictly-obey-dir-locals)
+                           (funcall otpp-strictly-obey-dir-locals dir root dir-locals-root)
+                         otpp-strictly-obey-dir-locals)
+                       (equal (expand-file-name root) (expand-file-name dir-locals-root)))))
+        (hack-dir-local-variables-non-file-buffer))
+      (or (bound-and-true-p otpp-project-name)
+          (bound-and-true-p project-name)
+          (and (fboundp 'project-name) (project-name pr))))))
 
 ;;; API
 
