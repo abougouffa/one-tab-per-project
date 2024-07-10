@@ -104,20 +104,19 @@ Then, this function checks in this order:
 2. Same with the local variable `project-name'.
 3. If the function `project-name' is defined, call it on the
    current project."
-  (with-temp-buffer
-    (setq default-directory dir)
-    (when-let* ((pr (project-current))
-                (root (project-root pr)))
-      ;; When can find a `dir-locals-file' that can be applied to files inside
-      ;; `dir', we do some extra checks to determine if we should take it into
-      ;; account or not.
-      (let ((dir-locals-root (car (ensure-list (dir-locals-find-file (expand-file-name "dummy-file" dir))))))
-        (when (and dir-locals-root
-                   (or (if (functionp otpp-strictly-obey-dir-locals)
-                           (funcall otpp-strictly-obey-dir-locals dir root dir-locals-root)
-                         otpp-strictly-obey-dir-locals)
-                       (equal (expand-file-name root) (expand-file-name dir-locals-root)))))
-        (hack-dir-local-variables-non-file-buffer))
+  (when-let* ((pr (project-current))
+              (root (project-root pr))
+              ;; When can find a `dir-locals-file' that can be applied to files inside
+              ;; `dir', we do some extra checks to determine if we should take it into
+              ;; account or not.
+              (dir-locals-root (car (ensure-list (dir-locals-find-file (expand-file-name "dummy-file" dir)))))
+              (_ (or (equal (expand-file-name root) (expand-file-name dir-locals-root))
+                     (if (functionp otpp-strictly-obey-dir-locals)
+                         (funcall otpp-strictly-obey-dir-locals dir root dir-locals-root)
+                       otpp-strictly-obey-dir-locals))))
+    (with-temp-buffer
+      (setq default-directory dir)
+      (hack-dir-local-variables-non-file-buffer)
       (or (bound-and-true-p otpp-project-name)
           (bound-and-true-p project-name)
           (and (fboundp 'project-name) (project-name pr))))))
