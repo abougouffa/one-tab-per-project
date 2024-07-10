@@ -93,7 +93,7 @@ read if any of these conditions is correct:
   and the directory containing the `dir-locals-file'.
 - `otpp-strictly-obey-dir-locals' is a *not* a function and it is
   non-nil.
-- The `dir-locals-file' is strored in the project root, a.k.a.,
+- The `dir-locals-file' is stored in the project root, a.k.a.,
   the project root is the same as the `dir-locals-file'
   directory.
 
@@ -127,7 +127,7 @@ Then, this function checks in this order:
 ;;;###autoload
 (defun otpp-change-tab-root-dir (dir &optional tab-number)
   "Change the `otpp-root-dir' attribute to DIR.
-If if the absolete TAB-NUMBER is provided, set it, otherwise, set the
+If if the obsolete TAB-NUMBER is provided, set it, otherwise, set the
 current tab.
 When DIR is empty, delete it from the tab."
   (interactive
@@ -176,7 +176,7 @@ Returns non-nil if a new tab was created, and nil otherwise."
 
 Does nothing unless the user was allowed to be prompted for a
 project if needed (that is, the `maybe-prompt' argument in the
-adviced function call was non-nil), or if they did not select a
+advised function call was non-nil), or if they did not select a
 project when prompted.
 
 Does nothing if the current tab belongs to the selected project.
