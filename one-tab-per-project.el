@@ -104,8 +104,9 @@ Then, this function checks in this order:
 2. Same with the local variable `project-name'.
 3. If the function `project-name' is defined, call it on the
    current project."
-  (when-let* ((pr (project-current))
-              (root (project-root pr))
+  (when-let* ((default-directory dir)
+              (proj (project-current))
+              (root (project-root proj))
               ;; When can find a `dir-locals-file' that can be applied to files inside
               ;; `dir', we do some extra checks to determine if we should take it into
               ;; account or not.
@@ -114,12 +115,10 @@ Then, this function checks in this order:
                      (if (functionp otpp-strictly-obey-dir-locals)
                          (funcall otpp-strictly-obey-dir-locals dir root dir-locals-root)
                        otpp-strictly-obey-dir-locals))))
-    (with-temp-buffer
-      (setq default-directory dir)
-      (hack-dir-local-variables-non-file-buffer)
-      (or (bound-and-true-p otpp-project-name)
-          (bound-and-true-p project-name)
-          (and (fboundp 'project-name) (project-name pr))))))
+    (hack-dir-local-variables-non-file-buffer)
+    (or (bound-and-true-p otpp-project-name)
+        (bound-and-true-p project-name)
+        (and (fboundp 'project-name) (project-name proj)))))
 
 ;;; API
 
