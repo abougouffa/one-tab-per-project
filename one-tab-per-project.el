@@ -77,7 +77,7 @@ for the project that includes this path."
   (defvar-local project-vc-name nil))
 (defvar-local otpp-project-name nil)
 
-;;;###autoload(put 'project-name 'safe-local-variable 'stringp)
+;;;###autoload(put 'project-vc-name 'safe-local-variable 'stringp)
 ;;;###autoload(put 'otpp-project-name 'safe-local-variable 'stringp)
 
 (defvar otpp--unique-tabs-map (make-hash-table :test 'equal))
