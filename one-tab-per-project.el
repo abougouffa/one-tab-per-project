@@ -118,7 +118,7 @@ Set a nil (default value) for only respect the variables when the
 are defined in the project root.
 
 Set to a function that takes (DIR PROJECT-ROOT DIR-LOCALS-ROOT),
-see `otpp--project-name'.
+see `otpp-project-name'.
 
 This can be useful when the project includes sub-projects (a Git
 repository with sub-modules, a Git repository with other Git
@@ -133,7 +133,7 @@ The current tab is supplied as an argument."
   :group 'otpp
   :type 'hook)
 
-(defcustom otpp-project-name-function #'otpp--project-name
+(defcustom otpp-project-name-function #'otpp-project-name
   "Derrive project name from a directory.
 
 This function receives a directory and return the project name
@@ -144,9 +144,9 @@ for the project that includes this path."
 
 ;;; Internals and helpers
 
-(unless (boundp 'project-vc-name) ; Emacs 29.1, Project 0.9.0
-  (defvar-local project-vc-name nil))
 (defvar-local otpp-project-name nil)
+(unless (boundp 'project-vc-name) ; Should be present in Emacs 29.1, Project 0.9.0
+  (defvar-local project-vc-name nil))
 
 ;;;###autoload(put 'project-vc-name 'safe-local-variable 'stringp)
 ;;;###autoload(put 'otpp-project-name 'safe-local-variable 'stringp)
@@ -165,7 +165,9 @@ for the project that includes this path."
           (setcdr explicit-name 'otpp))))) ; Set the `explicit-name' to `otpp'
   (force-mode-line-update))
 
-(defun otpp--project-name (dir)
+;;; API
+
+(defun otpp-project-name (dir)
   "Get the project name from DIR.
 
 This extracts the project root and finds a `dir-locals-file' file
@@ -206,8 +208,6 @@ Then, this function checks in this order:
         (or otpp-project-name
             project-vc-name ; BUG: Don't use `project-name' function as it's behaving strangly for nested projects
             (file-name-nondirectory (directory-file-name root)))))))
-
-;;; API
 
 ;;;###autoload
 (defun otpp-change-tab-root-dir (dir &optional tab-number)
