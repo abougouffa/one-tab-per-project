@@ -127,7 +127,7 @@ Then, this function checks in this order:
   "Change the `otpp-root-dir' attribute to DIR.
 If if the obsolete TAB-NUMBER is provided, set it, otherwise, set the
 current tab.
-When DIR is empty, delete it from the tab."
+When DIR is empty or nil, delete it from the tab."
   (interactive
    (list (completing-read
           "Root directory for tab (leave blank to remove the tab root directory): "
@@ -135,19 +135,18 @@ When DIR is empty, delete it from the tab."
            (delq nil (mapcar (apply-partially #'alist-get 'otpp-root-dir)
                              (funcall tab-bar-tabs-function)))))
          current-prefix-arg))
-  (let* ((dir (expand-file-name dir))
-         (tabs (funcall tab-bar-tabs-function))
+  (let* ((tabs (funcall tab-bar-tabs-function))
          (index (if tab-number
                     (1- (max 0 (min tab-number (length tabs))))
                   (tab-bar--current-tab-index tabs)))
          (tab (nth index tabs))
          (root-dir (assq 'otpp-root-dir tab))
-         (tab-new-root-dir (and (not (string-empty-p dir)) dir)))
+         (tab-new-root-dir (and dir (not (string-empty-p dir)) (expand-file-name dir))))
     (if root-dir
         (setcdr root-dir tab-new-root-dir)
       (nconc tab `((otpp-root-dir . ,tab-new-root-dir)))
       ;; Register in the unique names hash-table
-      (unique-dir-name-register dir :base (otpp--get-project-base-name dir) :map 'otpp--unique-tabs-map))
+      (unique-dir-name-register tab-new-root-dir :base (otpp--get-project-base-name tab-new-root-dir) :map 'otpp--unique-tabs-map))
     (otpp--update-all-tabs) ; Update all tabs
     (run-hook-with-args 'otpp-post-change-tab-root-functions tab)))
 
@@ -211,8 +210,16 @@ Call ORIG-FN with ARGS otherwise."
 (defun otpp--project-kill-buffers-a (orig-fn &rest args)
   "Call ORIG-FN with ARGS, then close the current tab group, if any."
   (when (apply orig-fn args)
-    (when-let ((curr-tab-root-dir (alist-get 'otpp-root-dir (tab-bar--current-tab))))
-      (tab-bar-close-tab)
+    (when-let* ((tabs (funcall tab-bar-tabs-function))
+                (curr-tab (assq 'current-tab tabs))
+                (curr-tab-root-dir (alist-get 'otpp-root-dir curr-tab)))
+      (if (length> tabs 1)
+          (tab-bar-close-tab)
+        ;; When the tab cannot be removed (last tab), remove the association
+        ;; with the current project and rename it to the default
+        (otpp-change-tab-root-dir nil)
+        (setcdr (assq 'name curr-tab) "*default*")
+        (setcdr (assq 'explicit-name curr-tab) 'def))
       (unique-dir-name-unregister curr-tab-root-dir :map 'otpp--unique-tabs-map)
       (otpp--update-all-tabs))))
 
