@@ -24,7 +24,7 @@
   "One tab per project."
   :group 'project)
 
-(defcustom otpp-preserve-non-otpp-tab t
+(defcustom otpp-preserve-non-otpp-tabs t
   "When non-nil, preserve the current rootless tab when switching projects."
   :group 'otpp
   :type 'boolean)
@@ -198,7 +198,7 @@ project when prompted.
 Does nothing if the current tab belongs to the selected project.
 
 If the current tab does not have an `otpp-root-dir' attribute, and if
-the value of `otpp-preserve-non-otpp-tab' is nil, then set the root
+the value of `otpp-preserve-non-otpp-tabs' is nil, then set the root
 directory for the current tab to represent the selected project.
 
 Otherwise, select or create the tab represents the selected project."
@@ -209,7 +209,7 @@ Otherwise, select or create the tab represents the selected project."
       (let ((curr-tab-root-dir (alist-get 'otpp-root-dir (tab-bar--current-tab)))
             (target-proj-root-dir (expand-file-name proj-dir)))
         (unless (equal curr-tab-root-dir target-proj-root-dir)
-          (if (or curr-tab-root-dir (otpp-find-tabs-by-root-dir target-proj-root-dir) otpp-preserve-non-otpp-tab)
+          (if (or curr-tab-root-dir (otpp-find-tabs-by-root-dir target-proj-root-dir) otpp-preserve-non-otpp-tabs)
               (otpp-select-or-create-tab-root-dir target-proj-root-dir)
             (otpp-change-tab-root-dir target-proj-root-dir)))))
     proj-curr))
