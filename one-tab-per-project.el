@@ -47,7 +47,7 @@ Set a nil (default value) for only respect the variables when the
 are defined in the project root.
 
 Set to a function that takes (DIR PROJECT-ROOT DIR-LOCALS-ROOT),
-see `otpp--get-project-base-name'.
+see `otpp--project-name'.
 
 This can be useful when the project includes sub-projects (a Git
 repository with sub-modules, a Git repository with other Git
@@ -62,7 +62,23 @@ The current tab is supplied as an argument."
   :group 'otpp
   :type 'hook)
 
+(defcustom otpp-project-name-function #'otpp--project-name
+  "Derrive project name from a directory.
+
+This function receives a directory and return the project name
+for the project that includes this path."
+  :group 'otpp
+  :type '(choice function (symbol nil)))
+
+
 ;;; Internals and helpers
+
+(unless (boundp 'project-vc-name) ; Emacs 29.1, Project 0.9.0
+  (defvar-local project-vc-name nil))
+(defvar-local otpp-project-name nil)
+
+;;;###autoload(put 'project-name 'safe-local-variable 'stringp)
+;;;###autoload(put 'otpp-project-name 'safe-local-variable 'stringp)
 
 (defvar otpp--unique-tabs-map (make-hash-table :test 'equal))
 
@@ -78,10 +94,7 @@ The current tab is supplied as an argument."
           (setcdr explicit-name 'otpp))))) ; Set the `explicit-name' to `otpp'
   (force-mode-line-update))
 
-;;;###autoload(put 'project-name 'safe-local-variable 'stringp)
-;;;###autoload(put 'otpp-project-name 'safe-local-variable 'stringp)
-
-(defun otpp--get-project-base-name (dir)
+(defun otpp--project-name (dir)
   "Get the project name from DIR.
 
 This extracts the project root and finds a `dir-locals-file' file
@@ -101,24 +114,27 @@ Then, this function checks in this order:
 
 1. If the local variable `otpp-project-name' is bound and
    contains a value, use it as project name.
-2. Same with the local variable `project-name'.
+2. Same with the local variable `project-vc-name'.
 3. If the function `project-name' is defined, call it on the
    current project."
-  (when-let* ((default-directory dir)
-              (proj (project-current))
-              (root (project-root proj))
-              ;; When can find a `dir-locals-file' that can be applied to files inside
-              ;; `dir', we do some extra checks to determine if we should take it into
-              ;; account or not.
-              (dir-locals-root (car (ensure-list (dir-locals-find-file (expand-file-name "dummy-file" dir)))))
-              (_ (or (equal (expand-file-name root) (expand-file-name dir-locals-root))
-                     (if (functionp otpp-strictly-obey-dir-locals)
-                         (funcall otpp-strictly-obey-dir-locals dir root dir-locals-root)
-                       otpp-strictly-obey-dir-locals))))
-    (hack-dir-local-variables-non-file-buffer)
-    (or (bound-and-true-p otpp-project-name)
-        (bound-and-true-p project-name)
-        (and (fboundp 'project-name) (project-name proj)))))
+  (when-let* ((dir (expand-file-name dir))
+              (proj (project-current nil dir))
+              (root (project-root proj)))
+    ;; When can find a `dir-locals-file' that can be applied to files inside
+    ;; `dir', we do some extra checks to determine if we should take it into
+    ;; account or not.
+    (with-temp-buffer
+      (setq default-directory dir)
+      (let (project-vc-name otpp-project-name) ; BUG: Force them to nil to ensure we are using the local values
+        (when-let* ((dir-locals-root (car (ensure-list (dir-locals-find-file (expand-file-name "dummy-file" dir)))))
+                    (_ (or (equal (expand-file-name root) (expand-file-name dir-locals-root))
+                           (if (functionp otpp-strictly-obey-dir-locals)
+                               (funcall otpp-strictly-obey-dir-locals dir root dir-locals-root)
+                             otpp-strictly-obey-dir-locals))))
+          (hack-dir-local-variables-non-file-buffer))
+        (or otpp-project-name
+            project-vc-name ; BUG: Don't use `project-name' function as it's behaving strangly for nested projects
+            (file-name-nondirectory (directory-file-name root)))))))
 
 ;;; API
 
@@ -146,7 +162,10 @@ When DIR is empty or nil, delete it from the tab."
         (setcdr root-dir tab-new-root-dir)
       (nconc tab `((otpp-root-dir . ,tab-new-root-dir)))
       ;; Register in the unique names hash-table
-      (unique-dir-name-register tab-new-root-dir :base (otpp--get-project-base-name tab-new-root-dir) :map 'otpp--unique-tabs-map))
+      (unique-dir-name-register tab-new-root-dir
+                                :base (and otpp-project-name-function
+                                           (funcall otpp-project-name-function tab-new-root-dir))
+                                :map 'otpp--unique-tabs-map))
     (otpp--update-all-tabs) ; Update all tabs
     (run-hook-with-args 'otpp-post-change-tab-root-functions tab)))
 
