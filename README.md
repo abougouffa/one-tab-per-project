@@ -27,7 +27,10 @@ repository.
   :straight (:host github :repo "abougouffa/one-tab-per-project")
   :after project
   :init
-  (otpp-mode 1))
+  (otpp-mode 1)
+  ;; If you want to remap the commands in `otpp-tab-restricted-commands`
+  ;; to `otpp` defined commands
+  (otpp-remap-commands-mode 1))
 ```
 
 ### Usage
@@ -108,9 +111,9 @@ Set a nil (default value) to only respect the local variables when they
 are defined in the project's root (the `dir-locals-file` is located in
 the project's root).
 
-Set to a function that takes `(DIR PROJECT-ROOT DIR-LOCALS-ROOT)' as
-argument, see `otpp-project-name`. The function should return non-nil to
-take the local variables into account.
+Set to a function that takes `(DIR PROJECT-ROOT DIR-LOCALS-ROOT)'
+as argument, see the function `otpp-project-name`. The function
+should return non-nil to take the local variables into account.
 
 This can be useful when the project include sub-projects (a Git
 repository with sub-modules, a Git repository with other Git repos
@@ -129,7 +132,27 @@ Derrive project name from a directory.
 This function receives a directory and return the project name
 for the project that includes this path.
 
+#### `otpp-tab-restricted-commands`
+
+A list of (pkg-name . (command-1 command-2 ...)).
+Calling `otpp-define-tab-restricted-commands` will define variants of
+these commands that gets executed with `default-directory` set to the
+current tab's root directory. In `otpp-remap-commands-mode`, the
+bindings to these commands gets remapped to `otpp` ones.
+
 ### Function and Macro Documentation
+
+#### `(otpp-current-tab-root-dir)`
+
+Get the root directory set to the current tab.
+
+#### `(otpp-make-tab-commands PACKAGE &rest COMMANDS)`
+
+Define COMMANDS from PACKAGE to be executed in the current's tab project root.
+
+#### `(otpp-define-tab-restricted-commands)`
+
+Define `otpp` restricted commands for `otpp-tab-restricted-commands`.
 
 #### `(otpp-project-name DIR)`
 
