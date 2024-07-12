@@ -93,7 +93,7 @@
 (require 'seq)
 (require 'project)
 (require 'unique-dir-name)
-(autoload #'help-function-arglist "help")
+
 
 (defgroup otpp nil
   "One tab per project."
@@ -198,17 +198,13 @@ bindings to these commands gets remapped to `otpp' ones."
   (with-eval-after-load package
     (let (form)
       (dolist (command commands)
-        (let* ((new-cmd (intern (format "otpp-%s" command)))
-               (arglist (help-function-arglist command t))
-               (args (and arglist (seq-split arglist (or (cl-position '&rest arglist) (length arglist)))))
-               (rest (seq-filter (lambda (sym) (not (string-prefix-p "&" (symbol-name sym)))) (cdr args)))
-               (args (append (seq-filter (lambda (sym) (not (string-prefix-p "&" (symbol-name sym)))) (car args)) rest)))
+        (let ((new-cmd (intern (format "otpp-%s" command))))
           (push
-           `(defun ,new-cmd ,arglist
+           `(defun ,new-cmd (&rest args)
              ,(format "Call `%s' in the context of the current's tab project." command)
              ,(interactive-form command) ; Use the same interactive form as the original command
              (let ((default-directory (or (otpp-current-tab-root-dir) default-directory)))
-              (apply (function ,command) (list ,@args))))
+              (apply (function ,command) args)))
            form)))
       (eval (macroexp-progn form)))))
 
