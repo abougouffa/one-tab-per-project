@@ -381,8 +381,9 @@ Call ORIG-FN with ARGS otherwise."
       (progn
         (otpp-define-tab-restricted-commands)
         (dolist (pkg-cmd otpp-tab-restricted-commands)
-          (dolist (cmd (cdr pkg-cmd))
-            (keymap-global-set (format "<remap> <%s>" cmd) (intern (format "otpp-%s" cmd))))))
+          (with-eval-after-load (car pkg-cmd)
+            (dolist (cmd (cdr pkg-cmd))
+              (keymap-global-set (format "<remap> <%s>" cmd) (intern (format "otpp-%s" cmd)))))))
     (dolist (pkg-cmd otpp-tab-restricted-commands)
       (dolist (cmd (cdr pkg-cmd))
         (keymap-global-unset (format "<remap> <%s>" cmd))))))
