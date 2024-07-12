@@ -118,9 +118,9 @@ Set a nil (default value) to only respect the local variables when they
 are defined in the project's root (the `dir-locals-file' is located in
 the project's root).
 
-Set to a function that takes `(DIR PROJECT-ROOT DIR-LOCALS-ROOT)' as
-argument, see `otpp-project-name'. The function should return non-nil to
-take the local variables into account.
+Set to a function that takes `(DIR PROJECT-ROOT DIR-LOCALS-ROOT)'
+as argument, see the function `otpp-project-name'. The function
+should return non-nil to take the local variables into account.
 
 This can be useful when the project include sub-projects (a Git
 repository with sub-modules, a Git repository with other Git repos
