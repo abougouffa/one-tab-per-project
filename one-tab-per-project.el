@@ -32,7 +32,10 @@
 ;;   :straight (:host github :repo "abougouffa/one-tab-per-project")
 ;;   :after project
 ;;   :init
-;;   (otpp-mode 1))
+;;   (otpp-mode 1)
+;;   ;; If you want to remap the commands in `otpp-tab-restricted-commands'
+;;   ;; to `otpp' defined commands
+;;   (otpp-remap-commands-mode 1))
 ;; ```
 
 ;;; Usage
@@ -90,6 +93,7 @@
 (require 'seq)
 (require 'project)
 (require 'unique-dir-name)
+(autoload #'help-function-arglist "help")
 
 (defgroup otpp nil
   "One tab per project."
@@ -143,6 +147,21 @@ for the project that includes this path."
   :group 'otpp
   :type '(choice function (symbol nil)))
 
+(defcustom otpp-tab-restricted-commands
+  '((project .
+     (project-find-file project-find-dir project-kill-buffers project-shell project-eshell project-dired project-compile project-find-regexp project-query-replace-regexp))
+    (consult .
+     (consult-grep consult-find consult-fd consult-ripgrep))
+    (rg . (rg-project))
+    (projection-multi . (projection-multi-compile))
+    (projection-dape . (projection-dape)))
+  "A list of (pkg-name . (command-1 command-2 ...)).
+Calling `otpp-define-tab-restricted-commands' will define variants of
+these commands that gets executed with `default-directory' set to the
+current tab's root directory. In `otpp-remap-commands-mode', the
+bindings to these commands gets remapped to `otpp' ones."
+  :type '(repeat (cons symbol (repeat function)))
+  :group 'otpp)
 
 ;;; Internals and helpers
 
@@ -168,6 +187,32 @@ for the project that includes this path."
   (force-mode-line-update))
 
 ;;; API
+
+(defun otpp-current-tab-root-dir ()
+  "Get the root directory set to the current tab."
+  (alist-get 'otpp-root-dir (tab-bar--current-tab)))
+
+(defun otpp-make-tab-commands (package &rest commands)
+  "Define COMMANDS from PACKAGE to be executed in the current's tab project root."
+  (declare (indent 1))
+  (with-eval-after-load package
+    (let (form)
+      (dolist (command commands)
+        (let ((new-cmd (intern (format "otpp-%s" command))))
+          (push
+           `(defalias ',new-cmd
+              (lambda ,(help-function-arglist command t)
+                ,(interactive-form command) ; Use the same interactive form as the original command
+                (let ((default-directory (or (otpp-current-tab-root-dir) default-directory)))
+                 (call-interactively (function ,command))))
+              ,(format "Call `%s' in the context of the current's tab project." command))
+           form)))
+      (eval (macroexp-progn form)))))
+
+(defun otpp-define-tab-restricted-commands ()
+  "Define `otpp' restricted commands for `otpp-tab-restricted-commands'."
+  (dolist (pkg-cmds otpp-tab-restricted-commands)
+    (apply #'otpp-make-tab-commands pkg-cmds)))
 
 (defun otpp-project-name (dir)
   "Get the project name from DIR.
@@ -282,7 +327,7 @@ Otherwise, select or create the tab represents the selected project."
          (maybe-prompt (car args))
          (proj-dir (and proj-curr (project-root proj-curr))))
     (when (and maybe-prompt proj-dir)
-      (let ((curr-tab-root-dir (alist-get 'otpp-root-dir (tab-bar--current-tab)))
+      (let ((curr-tab-root-dir (otpp-current-tab-root-dir))
             (target-proj-root-dir (expand-file-name proj-dir)))
         (unless (equal curr-tab-root-dir target-proj-root-dir)
           (if (or curr-tab-root-dir (otpp-find-tabs-by-root-dir target-proj-root-dir) otpp-preserve-non-otpp-tabs)
@@ -328,6 +373,20 @@ Call ORIG-FN with ARGS otherwise."
       (if otpp-mode
           (advice-add fn :around advice-fn)
         (advice-remove fn advice-fn)))))
+
+(define-minor-mode otpp-remap-commands-mode
+  "Override the keybindigs for `otpp-tab-restricted-commands'."
+  :group 'otpp
+  :global t
+  (if otpp-remap-commands-mode
+      (progn
+        (otpp-define-tab-restricted-commands)
+        (dolist (pkg-cmd otpp-tab-restricted-commands)
+          (dolist (cmd (cdr pkg-cmd))
+            (keymap-global-set (format "<remap> <%s>" cmd) (intern (format "otpp-%s" cmd))))))
+    (dolist (pkg-cmd otpp-tab-restricted-commands)
+      (dolist (cmd (cdr pkg-cmd))
+        (keymap-global-unset (format "<remap> <%s>" cmd))))))
 
 ;;;###autoload
 (defalias 'one-tab-per-project-mode 'otpp-mode)
