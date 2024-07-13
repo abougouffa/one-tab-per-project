@@ -204,7 +204,7 @@ bindings to these commands gets remapped to `otpp' ones."
              ,(format "Call `%s' in the context of the current's tab project." command)
              ,(interactive-form command) ; Use the same interactive form as the original command
              (let ((default-directory (or (otpp-current-tab-root-dir) default-directory)))
-              (apply (function ,command) args)))
+              (apply #'funcall-interactively (append (list (function ,command)) args))))
            form)))
       (eval (macroexp-progn form)))))
 
