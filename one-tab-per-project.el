@@ -156,7 +156,8 @@ for the project that includes this path."
     (consult .
      (consult-grep consult-find consult-fd consult-ripgrep))
     (rg . (rg-project))
-    (projection-multi . (projection-multi-compile))
+    (magit . (magit magit-status))
+    (projection-multi . (projection-multi-compile projection-multi-projection))
     (projection-dape . (projection-dape)))
   "A list of (pkg-name . (command-1 command-2 ...)).
 Calling `otpp-define-tab-restricted-commands' will define variants of
