@@ -149,7 +149,10 @@ for the project that includes this path."
 
 (defcustom otpp-tab-restricted-commands
   '((project .
-     (project-find-file project-find-dir project-kill-buffers project-shell project-eshell project-dired project-compile project-find-regexp project-query-replace-regexp))
+     (project-find-file project-find-dir
+      project-kill-buffers project-switch-to-buffer
+      project-shell project-eshell project-dired project-compile projection-dape
+      project-find-regexp project-query-replace-regexp))
     (consult .
      (consult-grep consult-find consult-fd consult-ripgrep))
     (rg . (rg-project))
