@@ -167,6 +167,11 @@ bindings to these commands gets remapped to `otpp' ones."
   :type '(repeat (cons symbol (repeat function)))
   :group 'otpp)
 
+(defcustom otpp-after-define-commands-hook nil
+  "Executed after defining the commands in `otpp-define-tab-restricted-commands'."
+  :group 'otpp
+  :type 'hook)
+
 ;;; Internals and helpers
 
 (defvar-local otpp-project-name nil)
@@ -215,7 +220,8 @@ bindings to these commands gets remapped to `otpp' ones."
 (defun otpp-define-tab-restricted-commands ()
   "Define `otpp' restricted commands for `otpp-tab-restricted-commands'."
   (dolist (pkg-cmds otpp-tab-restricted-commands)
-    (apply #'otpp-make-tab-commands pkg-cmds)))
+    (apply #'otpp-make-tab-commands pkg-cmds))
+  (run-hooks 'otpp-after-define-commands-hook))
 
 (defun otpp-project-name (dir)
   "Get the project name from DIR.
