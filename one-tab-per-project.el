@@ -147,6 +147,13 @@ for the project that includes this path."
   :group 'otpp
   :type '(choice function (symbol nil)))
 
+(defcustom otpp-allow-detach-projectless-buffer nil
+  "Allow detaching a buffer to a new tab even if it is not part of a project.
+This can also be set to a function that receives the buffer, and return
+non-nil if we should allow the tab creation."
+  :type '(choice boolean function)
+  :group 'otpp)
+
 (defcustom otpp-tab-restricted-commands
   '((project .
      (project-find-file project-find-dir
@@ -175,8 +182,7 @@ bindings to these commands gets remapped to `otpp' ones."
 ;;; Internals and helpers
 
 (defvar-local otpp-project-name nil)
-(unless (boundp 'project-vc-name) ; Should be present in Emacs 29.1, Project 0.9.0
-  (defvar-local project-vc-name nil))
+(defvar-local project-vc-name nil) ; Should be present in Emacs 29.1, Project 0.9.0
 
 ;;;###autoload(put 'project-vc-name 'safe-local-variable 'stringp)
 ;;;###autoload(put 'otpp-project-name 'safe-local-variable 'stringp)
@@ -279,6 +285,31 @@ When DIR isn't part of any project, returns nil."
         (or otpp-project-name
             project-vc-name ; BUG: Don't use `project-name' function as it's behaving strangly for nested projects
             (file-name-nondirectory (directory-file-name root)))))))
+
+;;;###autoload
+(defun otpp-detach-buffer-to-tab (buffer)
+  "Create or switch to the tab corresponding to the project of BUFFER.
+When called with the a prefix, it asks for the buffer."
+  (interactive (list (if current-prefix-arg (read-buffer "Select the buffer: ") (current-buffer))))
+  (with-current-buffer buffer
+    (if-let ((proj (project-current))
+             (proj-root (project-root proj))
+             (this-buff (current-buffer)))
+        (progn
+          (bury-buffer)
+          (otpp-select-or-create-tab-root-dir proj-root)
+          (switch-to-buffer this-buff))
+      (if (or (and (functionp otpp-allow-detach-projectless-buffer)
+                   (funcall otpp-allow-detach-projectless-buffer this-buff))
+              otpp-allow-detach-projectless-buffer)
+          (let* ((recent-tabs (mapcar (lambda (tab) (alist-get 'name tab)) (tab-bar--tabs-recent)))
+                 (tab-name (completing-read "Switch to tab by name (leave empty to create an unnamed tab): " recent-tabs)))
+            (bury-buffer)
+            (if (string-empty-p tab-name)
+                (tab-bar-new-tab)
+              (tab-bar-select-tab-by-name tab-name))
+            (switch-to-buffer this-buff))
+        (user-error "The buffer %S doesn't seem to be a part of a project" (buffer-name))))))
 
 ;;;###autoload
 (defun otpp-change-tab-root-dir (dir &optional tab-number)
