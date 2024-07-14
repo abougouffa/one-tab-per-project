@@ -132,6 +132,12 @@ Derrive project name from a directory.
 This function receives a directory and return the project name
 for the project that includes this path.
 
+#### `otpp-allow-detach-projectless-buffer`
+
+Allow detaching a buffer to a new tab even if it is not part of a project.
+This can also be set to a function that receives the buffer, and return
+non-nil if we should allow the tab creation.
+
 #### `otpp-tab-restricted-commands`
 
 A list of (pkg-name . (command-1 command-2 ...)).
@@ -139,6 +145,10 @@ Calling `otpp-define-tab-restricted-commands` will define variants of
 these commands that gets executed with `default-directory` set to the
 current tab's root directory. In `otpp-remap-commands-mode`, the
 bindings to these commands gets remapped to `otpp` ones.
+
+#### `otpp-after-define-commands-hook`
+
+Executed after defining the commands in `otpp-define-tab-restricted-commands`.
 
 ### Function and Macro Documentation
 
@@ -176,6 +186,11 @@ Then, this function checks in this order:
    0.9.0), call it on the current project.
 4. Return the directory name of the project's root.
 When DIR isn't part of any project, returns nil.
+
+#### `(otpp-detach-buffer-to-tab BUFFER)`
+
+Create or switch to the tab corresponding to the project of BUFFER.
+When called with the a prefix, it asks for the buffer.
 
 #### `(otpp-change-tab-root-dir DIR &optional TAB-NUMBER)`
 
