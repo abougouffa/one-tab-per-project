@@ -193,7 +193,9 @@ bindings to these commands gets remapped to `otpp' ones."
 (defvar-local project-vc-name nil) ; Should be present in Emacs 29.1, Project 0.9.0
 
 ;;;###autoload(put 'project-vc-name 'safe-local-variable 'stringp)
+;;;###autoload(put 'project-vc-name 'permanent-local-hook t)
 ;;;###autoload(put 'otpp-project-name 'safe-local-variable 'stringp)
+;;;###autoload(put 'otpp-project-name 'permanent-local-hook t)
 
 (defvar otpp--unique-tabs-map (make-hash-table :test 'equal))
 
