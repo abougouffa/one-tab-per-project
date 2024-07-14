@@ -67,6 +67,14 @@
 ;;   the same project (with different windows layouts for example). In this
 ;;   case, you can call the command `otpp-change-tab-root-dir' and select the
 ;;   path of the project to attach to.
+;;
+;; - When you use some commands to jump to a file (`find-file',
+;;   `xref-find-definitions', etc.), you can end up with a buffer belonging to a
+;;   different project but displayed in the current project's tab. In this case,
+;;   you can call `otpp-detach-buffer-to-tab' to create a new tab dedicated to
+;;   the current buffer's project. When `otpp-allow-detach-projectless-buffer'
+;;   is non-nil, create a new tab even if the buffer doesn't belong to a
+;;   project.
 
 ;;; Similar packages
 
@@ -290,7 +298,7 @@ When DIR isn't part of any project, returns nil."
 (defun otpp-detach-buffer-to-tab (buffer)
   "Create or switch to the tab corresponding to the project of BUFFER.
 When called with the a prefix, it asks for the buffer."
-  (interactive (list (if current-prefix-arg (read-buffer "Select the buffer: ") (current-buffer))))
+  (interactive (list (if current-prefix-arg (read-buffer "Select the buffer (leave empty for an unnamed buffer): ") (current-buffer))))
   (with-current-buffer buffer
     (if-let ((proj (project-current))
              (proj-root (project-root proj))
