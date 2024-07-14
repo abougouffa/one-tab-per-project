@@ -185,6 +185,7 @@ bindings to these commands gets remapped to `otpp' ones."
 
 (defun otpp--update-all-tabs ()
   "Update all the unique tab names from the root directories."
+  (otpp--cleanup-unique-map)
   (dolist (tab (funcall tab-bar-tabs-function))
     (when-let* ((path (alist-get 'otpp-root-dir tab))
                 (unique (gethash path otpp--unique-tabs-map)))
@@ -194,6 +195,17 @@ bindings to these commands gets remapped to `otpp' ones."
           (setcdr (assoc 'name tab) (alist-get 'unique-name unique))
           (setcdr explicit-name 'otpp))))) ; Set the `explicit-name' to `otpp'
   (force-mode-line-update))
+
+(defun otpp--cleanup-unique-map ()
+  "Cleanup the unique names hash-table."
+  (mapc (lambda (dir) (remhash dir otpp--unique-tabs-map))
+        (seq-filter
+         (lambda (dir)
+           (not (cl-some
+                 (lambda (tab) (equal (expand-file-name dir) (alist-get 'otpp-root-dir tab)))
+                 (funcall tab-bar-tabs-function))))
+         (hash-table-keys otpp--unique-tabs-map)))
+  (unique-dir-name-update-all :map 'otpp--unique-tabs-map))
 
 ;;; API
 
