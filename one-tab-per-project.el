@@ -80,12 +80,12 @@
 
 ;; Consider this usecase: supposing you are using `otpp-mode' and you've run
 ;; `project-switch-project' to open the `X' project in a new `X' tab. Now you
-;; `M-x find-file' then you open the `test.cpp` file outside the current `X'
+;; `M-x find-file` then you open the `test.cpp` file outside the current `X'
 ;; project. Now, if you run `project-find-file', you will be in one of these two
 ;; situations:
 ;;
 ;; 1. If `test.cpp` is part of another project `Y', the `project-find-file' will
-;;    prompt you with a list of `Y''s files even though we are in the `X' tab.
+;;    prompt you with a list of `Y's files even though we are in the `X' tab.
 ;;
 ;; 2. If `test.cpp` isn't part of any project, `project-find-file' will prompt
 ;; you to select a project first, then to select a file.
@@ -168,9 +168,9 @@ Set a nil (default value) to only respect the local variables when they
 are defined in the project's root (the `dir-locals-file' is located in
 the project's root).
 
-Set to a function that takes `(DIR PROJECT-ROOT DIR-LOCALS-ROOT)'
-as argument, see the function `otpp-project-name'. The function
-should return non-nil to take the local variables into account.
+Set to a function that takes DIR, PROJECT-ROOT and DIR-LOCALS-ROOT as
+arguments in this order, see the function `otpp-project-name'. The
+function should return non-nil to take the local variables into account.
 
 This can be useful when the project include sub-projects (a Git
 repository with sub-modules, a Git repository with other Git repos
@@ -306,9 +306,7 @@ Then, this function checks in this order:
 1. If the local variable `otpp-project-name' is set locally in the
 `dir-locals-file', use it as project name.
 2. Same with the local variable `project-vc-name'.
-3. If the function `project-name' is defined (Emacs 29.1 / Project
-   0.9.0), call it on the current project.
-4. Return the directory name of the project's root.
+3. Return the directory name of the project's root.
 
 When DIR isn't part of any project, returns nil."
   (when-let* ((dir (expand-file-name dir))
