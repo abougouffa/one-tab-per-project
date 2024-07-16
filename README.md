@@ -28,12 +28,12 @@ repository.
   :after project
   :init
   (otpp-mode 1)
-  ;; If you want to remap the commands in `otpp-tab-restricted-commands`
-  ;; to `otpp` defined commands
-  (otpp-remap-commands-mode 1))
+  ;; If you want to advice the commands in `otpp-override-commands`
+  ;; to be run in the current's tab (so, current project's) root directory
+  (otpp-override-mode 1))
 ```
 
-### Usage
+### Basic usage
 
 
 The usage is quite straightforward, there is no extra commands to learn to be
@@ -41,7 +41,7 @@ able to use it. When `otpp-mode` global minor mode is enabled, you will have
 this:
 
 - When you switch to a project `project-switch-project` (bound by default to
-  `C-x p p'), `otpp` will create a tab with the project name.
+  `C-x p p`), `otpp` will create a tab with the project name.
 
 - When you kill a project with all its buffers with `project-kill-buffers`, the
   tab is closed.
@@ -71,6 +71,41 @@ this:
   the current buffer's project. When `otpp-allow-detach-projectless-buffer`
   is non-nil, create a new tab even if the buffer doesn't belong to a
   project.
+
+### Advanced usage
+
+
+Consider this usecase: supposing you are using `otpp-mode` and you've run
+`project-switch-project` to open the `X` project in a new `X` tab. Now you
+`M-x find-file' then you open the `test.cpp` file outside the current `X`
+project. Now, if you run `project-find-file`, you will be in one of these two
+situations:
+
+1. If `test.cpp` is part of another project `Y`, the `project-find-file` will
+   prompt you with a list of `Y'`s files even though we are in the `X` tab.
+
+2. If `test.cpp` isn't part of any project, `project-find-file` will prompt
+you to select a project first, then to select a file.
+
+For this, `otpp` provides `otpp-prefix` (we recommend to bind it to some key,
+using this prefix from `M-x` can have some limitations). When you run
+`otpp-prefix` followed by `C-x p f` for example, you will be prompted for
+files in the current's tab project files even if you are visiting a file
+outside of the current project.
+
+In my workflow, I would like to always restrict the commands like
+`project-find-file` and `project-kill-buffers` to the project bound to the
+current tab, even if I'm visiting a file which is not part of this project.
+If you like this behavior, you can enable the `otpp-override-mode`. This mode
+will advice all the commands defined in `otpp-override-commands` to be ran in
+the current's tab root directory (_a.k.a._, in the project bound to the
+current tab).
+
+When `otpp-override-mode` is enabled, the `otpp-prefix` acts inversely. While
+all `otpp-override-commands` are restricted to the current's tab project by
+default, running a command with `otpp-prefix` will disable this behavior,
+which results of the next command to be run in the `default-directory`
+depending on the visited buffer.
 
 ### Similar packages
 
@@ -135,7 +170,7 @@ The current tab is supplied as an argument.
 
 #### `otpp-project-name-function`
 
-Derrive project name from a directory.
+Derive project name from a directory.
 
 This function receives a directory and return the project name
 for the project that includes this path.
@@ -146,31 +181,17 @@ Allow detaching a buffer to a new tab even if it is not part of a project.
 This can also be set to a function that receives the buffer, and return
 non-nil if we should allow the tab creation.
 
-#### `otpp-tab-restricted-commands`
+#### `otpp-override-commands`
 
-A list of (pkg-name . (command-1 command-2 ...)).
-Calling `otpp-define-tab-restricted-commands` will define variants of
-these commands that gets executed with `default-directory` set to the
-current tab's root directory. In `otpp-remap-commands-mode`, the
-bindings to these commands gets remapped to `otpp` ones.
-
-#### `otpp-after-define-commands-hook`
-
-Executed after defining the commands in `otpp-define-tab-restricted-commands`.
+A list of commands to be advised in `otpp-override-mode`.
+These commands will be run with `default-directory` set the to current's
+tab directory.
 
 ### Function and Macro Documentation
 
 #### `(otpp-current-tab-root-dir)`
 
 Get the root directory set to the current tab.
-
-#### `(otpp-make-tab-commands PACKAGE &rest COMMANDS)`
-
-Define COMMANDS from PACKAGE to be executed in the current's tab project root.
-
-#### `(otpp-define-tab-restricted-commands)`
-
-Define `otpp` restricted commands for `otpp-tab-restricted-commands`.
 
 #### `(otpp-project-name DIR)`
 
@@ -203,7 +224,7 @@ When called with the a prefix, it asks for the buffer.
 #### `(otpp-change-tab-root-dir DIR &optional TAB-NUMBER)`
 
 Change the `otpp-root-dir` attribute to DIR.
-If if the obsolete TAB-NUMBER is provided, set it, otherwise, set the
+If if the absolute TAB-NUMBER is provided, set it, otherwise, set the
 current tab.
 When DIR is empty or nil, delete it from the tab.
 
@@ -215,6 +236,16 @@ Return a list of tabs that have DIR as `otpp-root-dir` attribute.
 
 Select or create the tab with root directory DIR.
 Returns non-nil if a new tab was created, and nil otherwise.
+
+#### `(otpp-prefix)`
+
+Run the next command in the tab's root directory (or not!).
+The actual behavior depends on `otpp-override-mode`. For
+instance, when you execute M-x otpp-prefix followed by
+C-x p f, if the `otpp-override-mode` is
+enabled, this will run the `project-find-file` command in the
+`default-directory`, otherwise, it will bind the `default-directory` to
+the current's tab directory before executing `project-find-file`.
 
 -----
 <div style="padding-top:15px;color: #d0d0d0;">
