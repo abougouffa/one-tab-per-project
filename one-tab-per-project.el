@@ -38,14 +38,14 @@
 ;;   (otpp-override-mode 1))
 ;; ```
 
-;;; Usage
+;;; Basic usage
 
 ;; The usage is quite straightforward, there is no extra commands to learn to be
 ;; able to use it. When `otpp-mode' global minor mode is enabled, you will have
 ;; this:
 ;;
 ;; - When you switch to a project `project-switch-project' (bound by default to
-;;   `C-x p p'), `otpp' will create a tab with the project name.
+;;   `C-x p p`), `otpp' will create a tab with the project name.
 ;;
 ;; - When you kill a project with all its buffers with `project-kill-buffers', the
 ;;   tab is closed.
@@ -56,8 +56,8 @@
 ;;   `/home/user/project2/backend/', `otpp' will detect that the name of the
 ;;   project `backend' is the same as the previously opened one, but it have a
 ;;   different path. In this case, `otpp' will create a tab named
-;;   `backend[project2]' and renames the previously opened tab to
-;;   `backend[project1]'. This conflict resolution is provided by the
+;;   `backend[project2]` and renames the previously opened tab to
+;;   `backend[project1]`. This conflict resolution is provided by the
 ;;   [`unique-dir-name'](https://github.com/abougouffa/unique-dir-name) library,
 ;;   which works like the built-in `uniquify' library used to keep distinct
 ;;   names for buffer names.
@@ -75,6 +75,40 @@
 ;;   the current buffer's project. When `otpp-allow-detach-projectless-buffer'
 ;;   is non-nil, create a new tab even if the buffer doesn't belong to a
 ;;   project.
+
+;;; Advanced usage
+
+;; Consider this usecase: supposing you are using `otpp-mode' and you've run
+;; `project-switch-project' to open the `X' project in a new `X' tab. Now you
+;; `M-x find-file' then you open the `test.cpp` file outside the current `X'
+;; project. Now, if you run `project-find-file', you will be in one of these two
+;; situations:
+;;
+;; 1. If `test.cpp` is part of another project `Y', the `project-find-file' will
+;;    prompt you with a list of `Y''s files even though we are in the `X' tab.
+;;
+;; 2. If `test.cpp` isn't part of any project, `project-find-file' will prompt
+;; you to select a project first, then to select a file.
+;;
+;; For this, `otpp' provides `otpp-prefix' (we recommend to bind it to some key,
+;; using this prefix from `M-x' can have some limitations). When you run
+;; `otpp-prefix' followed by `C-x p f` for example, you will be prompted for
+;; files in the current's tab project files even if you are visiting a file
+;; outside of the current project.
+;;
+;; In my workflow, I would like to always restrict the commands like
+;; `project-find-file' and `project-kill-buffers' to the project bound to the
+;; current tab, even if I'm visiting a file which is not part of this project.
+;; If you like this behavior, you can enable the `otpp-override-mode'. This mode
+;; will advice all the commands defined in `otpp-override-commands' to be ran in
+;; the current's tab root directory (_a.k.a._, in the project bound to the
+;; current tab).
+;;
+;; When `otpp-override-mode' is enabled, the `otpp-prefix' acts inversely. While
+;; all `otpp-override-commands' are restricted to the current's tab project by
+;; default, running a command with `otpp-prefix' will disable this behavior,
+;; which results of the next command to be run in the `default-directory'
+;; depending on the visited buffer.
 
 ;;; Similar packages
 
@@ -154,7 +188,7 @@ The current tab is supplied as an argument."
   :version "1.0.1")
 
 (defcustom otpp-project-name-function #'otpp-project-name
-  "Derrive project name from a directory.
+  "Derive project name from a directory.
 
 This function receives a directory and return the project name
 for the project that includes this path."
@@ -185,7 +219,7 @@ non-nil if we should allow the tab creation."
     projection-multi-compile projection-multi-projection
     ;; projection-dape
     projection-dape)
-  "A list of commands to be adviced in `otpp-override-mode'.
+  "A list of commands to be advised in `otpp-override-mode'.
 These commands will be run with `default-directory' set the to current's
 tab directory."
   :type '(repeat function)
@@ -293,7 +327,7 @@ When DIR isn't part of any project, returns nil."
                              otpp-strictly-obey-dir-locals))))
           (hack-dir-local-variables-non-file-buffer))
         (or otpp-project-name
-            project-vc-name ; BUG: Don't use `project-name' function as it's behaving strangly for nested projects
+            project-vc-name ; BUG: Don't use `project-name' function as it's behaving strangely for nested projects
             (file-name-nondirectory (directory-file-name root)))))))
 
 ;;;###autoload
@@ -324,7 +358,7 @@ When called with the a prefix, it asks for the buffer."
 ;;;###autoload
 (defun otpp-change-tab-root-dir (dir &optional tab-number)
   "Change the `otpp-root-dir' attribute to DIR.
-If if the absolete TAB-NUMBER is provided, set it, otherwise, set the
+If if the absolute TAB-NUMBER is provided, set it, otherwise, set the
 current tab.
 When DIR is empty or nil, delete it from the tab."
   (interactive
@@ -395,6 +429,7 @@ Returns non-nil if a new tab was created, and nil otherwise."
                   (otpp--call-command-in-root-dir-maybe cmd)))))
       (setq otpp-prefix--tab-root-dir nil))))
 
+(eval-when-compile (defvar otpp-override-mode))
 (defun otpp-prefix ()
   "Run the next command in the tab's root directory (or not!).
 The actual behavior depends on `otpp-override-mode'. For
@@ -410,6 +445,7 @@ the current's tab directory before executing `project-find-file'."
 
 (add-hook 'prefix-command-echo-keystrokes-functions #'otpp-argument--description)
 (defun otpp-argument--description ()
+  "Add description in echo area when invoking `otpp-prefix'."
   (when otpp-prefix--tab-root-dir
     (format "Run next command in %s "
             (if (eq otpp-prefix--tab-root-dir 'yes)
