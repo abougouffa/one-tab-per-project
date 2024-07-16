@@ -103,6 +103,8 @@
 (require 'unique-dir-name)
 
 
+(defvar otpp-version "2.0.0")
+
 (defgroup otpp nil
   "One tab per project."
   :group 'project)
@@ -110,7 +112,8 @@
 (defcustom otpp-preserve-non-otpp-tabs t
   "When non-nil, preserve the current rootless tab when switching projects."
   :group 'otpp
-  :type 'boolean)
+  :type 'boolean
+  :version "0.1.0")
 
 (defcustom otpp-reconnect-tab t
   "Whether to reconnect a disconnected tab when switching to it.
@@ -121,7 +124,8 @@ argument.
 
 When non-nil, show the project dispatch menu instead."
   :group 'otpp
-  :type '(choice function boolean))
+  :type '(choice function boolean)
+  :version "0.1.0")
 
 (defcustom otpp-strictly-obey-dir-locals nil
   "Whether to strictly obey local variables.
@@ -138,14 +142,16 @@ This can be useful when the project include sub-projects (a Git
 repository with sub-modules, a Git repository with other Git repos
 inside, a Repo workspace, etc)."
   :group 'otpp
-  :type '(choice function boolean))
+  :type '(choice function boolean)
+  :version "1.0.1")
 
 (defcustom otpp-post-change-tab-root-functions nil
   "List of functions to call after changing the `otpp-root-dir' of a tab.
 This hook is run at the end of the function `otpp-change-tab-root-dir'.
 The current tab is supplied as an argument."
   :group 'otpp
-  :type 'hook)
+  :type 'hook
+  :version "1.0.1")
 
 (defcustom otpp-project-name-function #'otpp-project-name
   "Derrive project name from a directory.
@@ -153,14 +159,16 @@ The current tab is supplied as an argument."
 This function receives a directory and return the project name
 for the project that includes this path."
   :group 'otpp
-  :type '(choice function (symbol nil)))
+  :type '(choice function (symbol nil))
+  :version "1.1.0")
 
 (defcustom otpp-allow-detach-projectless-buffer nil
   "Allow detaching a buffer to a new tab even if it is not part of a project.
 This can also be set to a function that receives the buffer, and return
 non-nil if we should allow the tab creation."
   :type '(choice boolean function)
-  :group 'otpp)
+  :group 'otpp
+  :version "2.0.0")
 
 (defcustom otpp-tab-restricted-commands
   '((project .
