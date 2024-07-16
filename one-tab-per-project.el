@@ -33,9 +33,9 @@
 ;;   :after project
 ;;   :init
 ;;   (otpp-mode 1)
-;;   ;; If you want to remap the commands in `otpp-tab-restricted-commands'
-;;   ;; to `otpp' defined commands
-;;   (otpp-remap-commands-mode 1))
+;;   ;; If you want to advice the commands in `otpp-override-commands'
+;;   ;; to be run in the current's tab (so, current project's) root directory
+;;   (otpp-override-mode 1))
 ;; ```
 
 ;;; Usage
@@ -170,32 +170,29 @@ non-nil if we should allow the tab creation."
   :group 'otpp
   :version "2.0.0")
 
-(defcustom otpp-tab-restricted-commands
-  '((project .
-     (project-find-file project-find-dir
-      project-kill-buffers project-switch-to-buffer
-      project-shell project-eshell project-dired project-compile projection-dape
-      project-find-regexp project-query-replace-regexp))
-    (consult .
-     (consult-grep consult-find consult-fd consult-ripgrep))
-    (rg . (rg-project))
-    (magit . (magit magit-status))
-    (projection-multi . (projection-multi-compile projection-multi-projection))
-    (projection-dape . (projection-dape)))
-  "A list of (pkg-name . (command-1 command-2 ...)).
-Calling `otpp-define-tab-restricted-commands' will define variants of
-these commands that gets executed with `default-directory' set to the
-current tab's root directory. In `otpp-remap-commands-mode', the
-bindings to these commands gets remapped to `otpp' ones."
-  :type '(repeat (cons symbol (repeat function)))
-  :group 'otpp)
-
-(defcustom otpp-after-define-commands-hook nil
-  "Executed after defining the commands in `otpp-define-tab-restricted-commands'."
+(defcustom otpp-override-commands
+  '(;; project
+    project-find-file project-find-dir project-kill-buffers project-switch-to-buffer
+    project-shell project-eshell project-dired project-compile
+    project-find-regexp project-query-replace-regexp
+    ;; consult
+    consult-grep consult-find consult-fd consult-ripgrep
+    ;; rg
+    rg-project
+    ;; magit
+    magit magit-status
+    ;; projection-multi
+    projection-multi-compile projection-multi-projection
+    ;; projection-dape
+    projection-dape)
+  "A list of commands to be adviced in `otpp-override-mode'.
+These commands will be run with `default-directory' set the to current's
+tab directory."
+  :type '(repeat function)
   :group 'otpp
-  :type 'hook)
+  :version "1.2.0")
 
-;;; Internals and helpers
+(defvar otpp-verbose nil)
 
 (defvar-local otpp-project-name nil)
 (defvar-local project-vc-name nil) ; Should be present in Emacs 29.1, Project 0.9.0
@@ -204,6 +201,14 @@ bindings to these commands gets remapped to `otpp' ones."
 ;;;###autoload(put 'project-vc-name 'permanent-local-hook t)
 ;;;###autoload(put 'otpp-project-name 'safe-local-variable 'stringp)
 ;;;###autoload(put 'otpp-project-name 'permanent-local-hook t)
+
+;;; Obsolete definitions
+
+(define-obsolete-function-alias 'otpp-remap-commands-mode 'otpp-override-mode "2.0.0")
+(define-obsolete-function-alias 'otpp-tab-restricted-commands 'otpp-override-commands "2.0.0")
+(make-obsolete-variable 'otpp-after-define-commands-hook nil "2.0.0")
+
+;;; Internals and helpers
 
 (defvar otpp--unique-tabs-map (make-hash-table :test 'equal))
 
@@ -231,33 +236,20 @@ bindings to these commands gets remapped to `otpp' ones."
          (hash-table-keys otpp--unique-tabs-map)))
   (unique-dir-name-update-all :map 'otpp--unique-tabs-map))
 
+(defvar otpp-run-command-in-tab-root-dir nil)
+
+(defun otpp--call-command-in-root-dir-maybe (cmd &rest _args)
+  "Run CMD in `otpp-root-dir' depending on `otpp-run-command-in-tab-root-dir'."
+  (if otpp-run-command-in-tab-root-dir
+      (let ((default-directory (or (otpp-current-tab-root-dir) default-directory)))
+        (call-interactively cmd))
+    (call-interactively cmd)))
+
 ;;; API
 
 (defun otpp-current-tab-root-dir ()
   "Get the root directory set to the current tab."
   (alist-get 'otpp-root-dir (tab-bar--current-tab)))
-
-(defun otpp-make-tab-commands (package &rest commands)
-  "Define COMMANDS from PACKAGE to be executed in the current's tab project root."
-  (declare (indent 1))
-  (with-eval-after-load package
-    (let (form)
-      (dolist (command commands)
-        (let ((new-cmd (intern (format "otpp-%s" command))))
-          (push
-           `(defun ,new-cmd (&rest args)
-             ,(format "Call `%s' in the context of the current's tab project." command)
-             ,(interactive-form command) ; Use the same interactive form as the original command
-             (let ((default-directory (or (otpp-current-tab-root-dir) default-directory)))
-              (apply #'funcall-interactively (append (list (function ,command)) args))))
-           form)))
-      (eval (macroexp-progn form)))))
-
-(defun otpp-define-tab-restricted-commands ()
-  "Define `otpp' restricted commands for `otpp-tab-restricted-commands'."
-  (dolist (pkg-cmds otpp-tab-restricted-commands)
-    (apply #'otpp-make-tab-commands pkg-cmds))
-  (run-hooks 'otpp-after-define-commands-hook))
 
 (defun otpp-project-name (dir)
   "Get the project name from DIR.
@@ -332,7 +324,7 @@ When called with the a prefix, it asks for the buffer."
 ;;;###autoload
 (defun otpp-change-tab-root-dir (dir &optional tab-number)
   "Change the `otpp-root-dir' attribute to DIR.
-If if the obsolete TAB-NUMBER is provided, set it, otherwise, set the
+If if the absolete TAB-NUMBER is provided, set it, otherwise, set the
 current tab.
 When DIR is empty or nil, delete it from the tab."
   (interactive
@@ -433,6 +425,9 @@ Call ORIG-FN with ARGS otherwise."
       (unique-dir-name-unregister curr-tab-root-dir :map 'otpp--unique-tabs-map)
       (otpp--update-all-tabs))))
 
+
+;;; OTPP modes
+
 ;;;###autoload
 (define-minor-mode otpp-mode
   "Automatically create a tab per project, name them uniquely."
@@ -444,24 +439,25 @@ Call ORIG-FN with ARGS otherwise."
           (advice-add fn :around advice-fn)
         (advice-remove fn advice-fn)))))
 
-(define-minor-mode otpp-remap-commands-mode
-  "Override the keybindigs for `otpp-tab-restricted-commands'."
+;;;###autoload
+(define-minor-mode otpp-override-mode
+  "Run commands in `otpp-override-commands' in the current's tab directory."
   :group 'otpp
   :global t
-  (if otpp-remap-commands-mode
-      (progn
-        (otpp-define-tab-restricted-commands)
-        (dolist (pkg-cmd otpp-tab-restricted-commands)
-          (with-eval-after-load (car pkg-cmd)
-            (dolist (cmd (cdr pkg-cmd))
-              (keymap-global-set (format "<remap> <%s>" cmd) (intern (format "otpp-%s" cmd)))))))
-    (dolist (pkg-cmd otpp-tab-restricted-commands)
-      (dolist (cmd (cdr pkg-cmd))
-        (keymap-global-unset (format "<remap> <%s>" cmd))))))
+  (when (listp (car otpp-override-commands)) ;; TEMP: Remove this hack in next major version
+    (warn "Please note that in v2.0.0, the `otpp-override-commands' type has changed. Please update your configuration accordingly.")
+    (setq otpp-override-commands (append (mapcar #'cdr otpp-override-commands))))
+  (dolist (cmd otpp-override-commands)
+    (if otpp-override-mode
+        (advice-add cmd :around #'otpp--call-command-in-root-dir-maybe)
+      (advice-remove cmd #'otpp--call-command-in-root-dir-maybe)))
+  ;; Enable running the command in the current's tab directory
+  (setq otpp-run-command-in-tab-root-dir otpp-override-mode))
 
 ;;;###autoload
-(defalias 'one-tab-per-project-mode 'otpp-mode)
-
+(progn
+  (defalias 'one-tab-per-project-mode 'otpp-mode)
+  (defalias 'one-tab-per-project-override-mode 'otpp-override-mode))
 
 (provide 'otpp)
 (provide 'one-tab-per-project)
