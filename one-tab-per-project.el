@@ -368,6 +368,55 @@ Returns non-nil if a new tab was created, and nil otherwise."
     (otpp-change-tab-root-dir dir) ; Set the root directory for the current tab
     t))
 
+
+;;; The `otpp-prefix' implementation
+
+(defvar otpp-prefix--tab-root-dir nil)
+(defvar otpp-prefix-skip-commands
+  '(execute-extended-command self-insert-command
+    vertico-next vertico-previous minibuffer-complete
+    icomplete-forward-completions icomplete-backward-completions))
+
+(defun otpp--prefixed-command-pch ()
+  "Post command hook for `otpp-prefix'."
+  ;; TODO: Stupid hack to skip these commands, need to be implemented more properly
+  (unless (memq this-command otpp-prefix-skip-commands)
+    (remove-hook 'pre-command-hook #'otpp--prefixed-command-pch)
+    (let ((cmd this-command)
+          (run-cmd-in-root-dir (eq otpp-prefix--tab-root-dir 'yes)))
+      (setq this-command
+            (lambda ()
+              (interactive)
+              (when otpp-verbose (message "Running `%s' with `otpp-prefix'" cmd))
+              (setq this-command cmd)
+              (let ((otpp-run-command-in-tab-root-dir run-cmd-in-root-dir))
+                (if run-cmd-in-root-dir ; Just run the command with `otpp-run-command-in-tab-root-dir' bound to nil
+                    (call-interactively cmd)
+                  (otpp--call-command-in-root-dir-maybe cmd)))))
+      (setq otpp-prefix--tab-root-dir nil))))
+
+(defun otpp-prefix ()
+  "Run the next command in the tab's root directory (or not!).
+The actual behavior depends on `otpp-override-mode'. For
+instance, when you execute \\[otpp-prefix] followed by
+\\[project-find-file], if the `otpp-override-mode' is
+enabled, this will run the `project-find-file' command in the
+`default-directory', otherwise, it will bind the `default-directory' to
+the current's tab directory before executing `project-find-file'."
+  (interactive)
+  (prefix-command-preserve-state)
+  (setq otpp-prefix--tab-root-dir (if otpp-override-mode 'no 'yes))
+  (add-hook 'pre-command-hook #'otpp--prefixed-command-pch))
+
+(add-hook 'prefix-command-echo-keystrokes-functions #'otpp-argument--description)
+(defun otpp-argument--description ()
+  (when otpp-prefix--tab-root-dir
+    (format "Run next command in %s "
+            (if (eq otpp-prefix--tab-root-dir 'yes)
+                "current's tab `ottp' root directory"
+              "default-directory"))))
+
+
 ;;; Advices for the integration with `project'
 
 (defun otpp--project-current-a (orig-fn &rest args)
