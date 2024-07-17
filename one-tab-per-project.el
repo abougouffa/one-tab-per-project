@@ -141,7 +141,8 @@
 
 (defgroup otpp nil
   "One tab per project."
-  :group 'project)
+  :group 'project
+  :prefix "otpp-")
 
 (defcustom otpp-preserve-non-otpp-tabs t
   "When non-nil, preserve the current rootless tab when switching projects."
