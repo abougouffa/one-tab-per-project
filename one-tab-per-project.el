@@ -271,14 +271,17 @@ tab directory."
          (hash-table-keys otpp--unique-tabs-map)))
   (unique-dir-name-update-all :map 'otpp--unique-tabs-map))
 
+(defun otpp--apply-interactively (func &optional args)
+  "Apply FUNC to ARGS interactively."
+  (apply #'funcall-interactively (append (list func) args)))
+
 (defvar otpp-run-command-in-tab-root-dir nil)
 
-(defun otpp--call-command-in-root-dir-maybe (cmd &rest _args)
-  "Run CMD in `otpp-root-dir' depending on `otpp-run-command-in-tab-root-dir'."
-  (if otpp-run-command-in-tab-root-dir
-      (let ((default-directory (or (otpp-current-tab-root-dir) default-directory)))
-        (call-interactively cmd))
-    (call-interactively cmd)))
+(defun otpp--call-command-in-root-dir-maybe (cmd &rest args)
+  "Run CMD with ARGS in `otpp-root-dir' dep. on `otpp-run-command-in-tab-root-dir'."
+  (let ((default-directory (or (and otpp-run-command-in-tab-root-dir (otpp-current-tab-root-dir))
+                               default-directory)))
+    (otpp--apply-interactively cmd args)))
 
 ;;; API
 
@@ -424,7 +427,7 @@ Returns non-nil if a new tab was created, and nil otherwise."
               (setq this-command cmd)
               (let ((otpp-run-command-in-tab-root-dir run-cmd-in-root-dir))
                 (if run-cmd-in-root-dir ; Just run the command with `otpp-run-command-in-tab-root-dir' bound to nil
-                    (call-interactively cmd)
+                    (otpp--apply-interactively cmd)
                   (otpp--call-command-in-root-dir-maybe cmd)))))
       (setq otpp-prefix--tab-root-dir nil))))
 
