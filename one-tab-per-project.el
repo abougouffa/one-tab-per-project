@@ -215,7 +215,7 @@ non-nil if we should allow the tab creation."
     ;; rg
     rg-project
     ;; magit
-    magit magit-status
+    magit-project-status
     ;; projection-multi
     projection-multi-compile projection-multi-projection
     ;; projection-dape
