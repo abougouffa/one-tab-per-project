@@ -7,6 +7,7 @@
 ;; Version: 2.0.0
 ;; Package-Requires: ((emacs "28.1"))
 ;; Keywords: convenience
+;; SPDX-License-Identifier: GPL-3.0
 
 ;;; Commentary:
 
