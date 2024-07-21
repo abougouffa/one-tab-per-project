@@ -9,7 +9,8 @@
 ;; Version: 1.0.0
 ;; Homepage: https://github.com/abougouffa/unique-dir-name
 ;; Package-Requires: ((emacs "29.1"))
-;; SPDX-License-Identifier: BSD-3-Clause
+;; SPDX-License-Identifier: GPL-3.0
+
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
