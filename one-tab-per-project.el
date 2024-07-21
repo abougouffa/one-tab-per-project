@@ -5,7 +5,7 @@
 ;; Author: Abdelhak Bougouffa  (rot13 "nobhtbhssn@srqbencebwrpg.bet")
 ;; URL: https://github.com/abougouffa/one-tab-per-project
 ;; Version: 2.0.0
-;; Package-Requires: ((emacs "28.1") (unique-dir-name "1.0.0"))
+;; Package-Requires: ((emacs "28.1"))
 ;; Keywords: convenience
 
 ;;; Commentary:
@@ -24,10 +24,6 @@
 ;; repository.
 ;;
 ;; ```emacs-lisp
-;; ;; `one-tab-per-project' depends on `unique-dir-name', which is not on MELPA
-;; (use-package unique-dir-name
-;;   :straight (:host github :repo "abougouffa/unique-dir-name"))
-;;
 ;; (use-package one-tab-per-project
 ;;   :straight (:host github :repo "abougouffa/one-tab-per-project")
 ;;   :after project

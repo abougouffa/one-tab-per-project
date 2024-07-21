@@ -19,10 +19,6 @@ This package is not yet on MELPA, you need to installed from the GitHub
 repository.
 
 ```emacs-lisp
-;; `one-tab-per-project` depends on `unique-dir-name`, which is not on MELPA
-(use-package unique-dir-name
-  :straight (:host github :repo "abougouffa/unique-dir-name"))
-
 (use-package one-tab-per-project
   :straight (:host github :repo "abougouffa/one-tab-per-project")
   :after project
