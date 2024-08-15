@@ -1,4 +1,4 @@
-;;; one-tab-per-project.el --- One tab per project, with unique names -*- lexical-binding: t; -*-
+;;; otpp.el --- One tab per project, with unique names -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2024  Abdelhak Bougouffa
 
@@ -25,7 +25,7 @@
 ;; repository.
 ;;
 ;; ```emacs-lisp
-;; (use-package one-tab-per-project
+;; (use-package otpp
 ;;   :straight (:host github :repo "abougouffa/one-tab-per-project")
 ;;   :after project
 ;;   :init
@@ -266,7 +266,7 @@ tab directory."
                  (lambda (tab) (equal (expand-file-name dir) (alist-get 'otpp-root-dir tab)))
                  (funcall tab-bar-tabs-function))))
          (hash-table-keys otpp--unique-tabs-map)))
-  (unique-dir-name-update-all :map 'otpp--unique-tabs-map))
+  (otpp-uniq-update-all :map 'otpp--unique-tabs-map))
 
 (defun otpp--apply-interactively (func &optional args)
   "Apply FUNC to ARGS interactively."
@@ -378,10 +378,10 @@ When DIR is empty or nil, delete it from the tab."
         (setcdr root-dir tab-new-root-dir)
       (nconc tab `((otpp-root-dir . ,tab-new-root-dir)))
       ;; Register in the unique names hash-table
-      (unique-dir-name-register tab-new-root-dir
-                                :base (and otpp-project-name-function
-                                           (funcall otpp-project-name-function tab-new-root-dir))
-                                :map 'otpp--unique-tabs-map))
+      (otpp-uniq-register tab-new-root-dir
+                          :base (and otpp-project-name-function
+                                     (funcall otpp-project-name-function tab-new-root-dir))
+                          :map 'otpp--unique-tabs-map))
     (otpp--update-all-tabs) ; Update all tabs
     (run-hook-with-args 'otpp-post-change-tab-root-functions tab)))
 
@@ -506,7 +506,7 @@ Call ORIG-FN with ARGS otherwise."
         (otpp-change-tab-root-dir nil)
         (setcdr (assq 'name curr-tab) "*default*")
         (setcdr (assq 'explicit-name curr-tab) 'def))
-      (unique-dir-name-unregister curr-tab-root-dir :map 'otpp--unique-tabs-map)
+      (otpp-uniq-unregister curr-tab-root-dir :map 'otpp--unique-tabs-map)
       (otpp--update-all-tabs))))
 
 
@@ -543,6 +543,6 @@ Call ORIG-FN with ARGS otherwise."
   (defalias 'one-tab-per-project-mode 'otpp-mode)
   (defalias 'one-tab-per-project-override-mode 'otpp-override-mode))
 
-(provide 'otpp)
 (provide 'one-tab-per-project)
-;;; one-tab-per-project.el ends here
+(provide 'otpp)
+;;; otpp.el ends here

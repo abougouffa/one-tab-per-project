@@ -19,7 +19,7 @@ This package is not yet on MELPA, you need to installed from the GitHub
 repository.
 
 ```emacs-lisp
-(use-package one-tab-per-project
+(use-package otpp
   :straight (:host github :repo "abougouffa/one-tab-per-project")
   :after project
   :init

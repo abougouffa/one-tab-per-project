@@ -1,4 +1,4 @@
-;;; unique-dir-name.el --- Derive unique names based on paths -*- lexical-binding: t; -*-
+;;; otpp-uniq.el --- Derive unique names based on paths -*- lexical-binding: t; -*-
 ;;
 ;; Copyright (C) 2024 Abdelhak Bougouffa
 ;;
@@ -7,7 +7,7 @@
 ;; Created: July 07, 2024
 ;; Modified: July 10, 2024
 ;; Version: 1.0.0
-;; Homepage: https://github.com/abougouffa/unique-dir-name
+;; Homepage: https://github.com/abougouffa/otpp-uniq
 ;; Package-Requires: ((emacs "29.1"))
 ;; SPDX-License-Identifier: GPL-3.0
 
@@ -29,20 +29,20 @@
 
 ;;; Unique name from directory
 
-(defvar unique-dir-name-map-default (make-hash-table :test 'equal))
-(defvar unique-dir-name-format "%s[%s]")
+(defvar otpp-uniq-map-default (make-hash-table :test 'equal))
+(defvar otpp-uniq-format "%s[%s]")
 
 ;;; Helpers
 
-(defun unique-dir-name--get-dir-elements (dir)
+(defun otpp-uniq--get-dir-elements (dir)
   "Get elements for the DIR path."
   (butlast (reverse (file-name-split (directory-file-name (expand-file-name dir))))))
 
-(defun unique-dir-name--unique-elements (dir1 dir2 &optional base1 base2)
+(defun otpp-uniq--unique-elements (dir1 dir2 &optional base1 base2)
   "Return unique elements of DIR1 and DIR2.
 Consider custom base names BASE1 and BASE2 when non-nil."
-  (let* ((els1 (unique-dir-name--get-dir-elements dir1))
-         (els2 (unique-dir-name--get-dir-elements dir2)))
+  (let* ((els1 (otpp-uniq--get-dir-elements dir1))
+         (els2 (otpp-uniq--get-dir-elements dir2)))
     (when base1 (push base1 els1))
     (when base2 (push base2 els2))
     (while-let ((el1 (car els1))
@@ -51,9 +51,9 @@ Consider custom base names BASE1 and BASE2 when non-nil."
       (pop els1) (pop els2))
     (cons els1 els2)))
 
-(cl-defun unique-dir-name--create-or-update (dir &key base rename-fn (map 'unique-dir-name-map-default))
+(cl-defun otpp-uniq--create-or-update (dir &key base rename-fn (map 'otpp-uniq-map-default))
   "Create or update a unique element for DIR.
-For the meaning of :MAP, :RENAME-FN and :BASE, see `unique-dir-name-register'."
+For the meaning of :MAP, :RENAME-FN and :BASE, see `otpp-uniq-register'."
   (let* ((dir (expand-file-name dir))
          (dir-name (file-name-nondirectory (directory-file-name (expand-file-name dir))))
          (unique-map (eval map))
@@ -70,7 +70,7 @@ For the meaning of :MAP, :RENAME-FN and :BASE, see `unique-dir-name-register'."
                      (when (and (not (string= dir other-path)) ; not the same dir
                                 (string= name (or (alist-get 'base-name other-element)
                                                   (alist-get 'dir-name other-element))))
-                       (let ((dir-els (car (unique-dir-name--unique-elements dir other-path base (alist-get 'base-name other-element)))))
+                       (let ((dir-els (car (otpp-uniq--unique-elements dir other-path base (alist-get 'base-name other-element)))))
                          (let ((len (length dir-els)))
                            (setq len-min (min len-min len))
                            (when (> len len-max)
@@ -84,7 +84,7 @@ For the meaning of :MAP, :RENAME-FN and :BASE, see `unique-dir-name-register'."
                              "/")))
                      (if (string-empty-p s)
                          name
-                       (format unique-dir-name-format name s))))))
+                       (format otpp-uniq-format name s))))))
     (if curr-element
         (let* ((old-unique-name (assq 'unique-name curr-element))
                (old-base (assq 'base-name curr-element)))
@@ -97,19 +97,19 @@ For the meaning of :MAP, :RENAME-FN and :BASE, see `unique-dir-name-register'."
       (puthash dir `((dir-name . ,dir-name) (base-name . ,base) (unique-name . ,unique-name)) unique-map)
       t))) ; return t on newly created elements
 
-(cl-defun unique-dir-name-update-all (&key rename-fn (map 'unique-dir-name-map-default))
+(cl-defun otpp-uniq-update-all (&key rename-fn (map 'otpp-uniq-map-default))
   "Update all unique names.
 This function can be called after manually modifying the hash table used
 to keep track of the unique names.
-For the meaning of :MAP and :RENAME-FN, see `unique-dir-name-register'."
+For the meaning of :MAP and :RENAME-FN, see `otpp-uniq-register'."
   (let ((unique-map (eval map)))
     (dolist (path (hash-table-keys unique-map)) ; Update all the names
-      (unique-dir-name--create-or-update path :map map :rename-fn rename-fn))))
+      (otpp-uniq--create-or-update path :map map :rename-fn rename-fn))))
 
 ;;; API
 
 ;;;###autoload
-(cl-defun unique-dir-name-register (dir &key base rename-fn (map 'unique-dir-name-map-default))
+(cl-defun otpp-uniq-register (dir &key base rename-fn (map 'otpp-uniq-map-default))
   "Make a unique name derived from DIR.
 If the :BASE string is provided, it will be used as a basis for the
 unique name, otherwise, this will be calculated from the directory name
@@ -127,19 +127,19 @@ the hash-table elements."
              (element (gethash dir unique-map)))
        element
      (puthash dir `((dir-name . ,dir-name) (base-name . ,base) (unique-name . ,name)) unique-map)
-     (unique-dir-name-update-all :map map :rename-fn rename-fn)
+     (otpp-uniq-update-all :map map :rename-fn rename-fn)
      (gethash dir unique-map))))
 
 ;;;###autoload
-(cl-defun unique-dir-name-unregister (dir &key rename-fn (map 'unique-dir-name-map-default))
+(cl-defun otpp-uniq-unregister (dir &key rename-fn (map 'otpp-uniq-map-default))
   "Unregister a unique name derived from DIR.
-For the meaning of :MAP and :RENAME-FN, see `unique-dir-name-register'."
+For the meaning of :MAP and :RENAME-FN, see `otpp-uniq-register'."
   (let* ((dir (expand-file-name dir))
          (unique-map (eval map)))
     (remhash dir unique-map)
-    (unique-dir-name-update-all :map map :rename-fn rename-fn)
+    (otpp-uniq-update-all :map map :rename-fn rename-fn)
     unique-map))
 
 
-(provide 'unique-dir-name)
-;;; unique-dir-name.el ends here
+(provide 'otpp-uniq)
+;;; otpp-uniq.el ends here
