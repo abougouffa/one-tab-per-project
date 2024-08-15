@@ -50,9 +50,8 @@ this:
   different path. In this case, `otpp` will create a tab named
   `backend[project2]` and renames the previously opened tab to
   `backend[project1]`. This conflict resolution is provided by the
-  [`unique-dir-name`](https://github.com/abougouffa/unique-dir-name) library,
-  which works like the built-in `uniquify` library used to keep distinct
-  names for buffer names.
+  `otpp-uniq` library, which works like the built-in `uniquify` library used
+  to keep distinct names for buffer names.
 
 - For some cases, you might need to attach a manually created tab (by
   `tab-bar-new-tab`) to an opened project so you have two tabs dedicated to
