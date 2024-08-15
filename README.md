@@ -1,5 +1,5 @@
 <a href="https://github.com/abougouffa/one-tab-per-project"><img src="https://www.gnu.org/software/emacs/images/emacs.png" alt="Emacs Logo" width="80" height="80" align="right"></a>
-## one-tab-per-project.el
+## otpp.el
 *One tab per project, with unique names*
 
 ---
