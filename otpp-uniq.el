@@ -6,8 +6,6 @@
 ;; Maintainer: Abdelhak Bougouffa <abougouffa@fedoraproject.org>
 ;; Created: July 07, 2024
 ;; Modified: July 10, 2024
-;; Version: 1.0.0
-;; Homepage: https://github.com/abougouffa/otpp-uniq
 ;; Package-Requires: ((emacs "29.1"))
 ;; SPDX-License-Identifier: GPL-3.0
 
