@@ -2,8 +2,10 @@
 
 ;; Copyright (C) 2024  Abdelhak Bougouffa
 
-;; Author: Abdelhak Bougouffa  (rot13 "nobhtbhssn@srqbencebwrpg.bet")
+;; Author: Abdelhak Bougouffa (rot13 "nobhtbhssn@srqbencebwrpg.bet")
 ;; URL: https://github.com/abougouffa/one-tab-per-project
+;; Created: July 07, 2024
+;; Modified: August 15, 2024
 ;; Version: 2.0.0
 ;; Package-Requires: ((emacs "28.1"))
 ;; Keywords: convenience
@@ -133,8 +135,6 @@
 (require 'otpp-uniq)
 
 
-(defvar otpp-version "2.0.0")
-
 (defgroup otpp nil
   "One tab per project."
   :group 'project
@@ -226,7 +226,6 @@ tab directory."
 (defvar otpp-verbose nil)
 
 (defvar-local otpp-project-name nil)
-(defvar-local project-vc-name nil) ; Should be present in Emacs 29.1, Project 0.9.0
 
 ;;;###autoload(put 'project-vc-name 'safe-local-variable 'stringp)
 ;;;###autoload(put 'project-vc-name 'permanent-local-hook t)
@@ -317,15 +316,18 @@ When DIR isn't part of any project, returns nil."
     ;; account or not.
     (with-temp-buffer
       (setq default-directory dir)
-      (let (project-vc-name otpp-project-name) ; BUG: Force them to nil to ensure we are using the local values
+      ;; BUG: Force them to nil to ensure we are using the local values
+      (let ((project-vc-name nil)
+            (otpp-project-name nil))
         (when-let* ((dir-locals-root (car (ensure-list (dir-locals-find-file (expand-file-name "dummy-file" dir)))))
-                    (_ (or (equal (expand-file-name root) (expand-file-name dir-locals-root))
-                           (if (functionp otpp-strictly-obey-dir-locals)
-                               (funcall otpp-strictly-obey-dir-locals dir root dir-locals-root)
-                             otpp-strictly-obey-dir-locals))))
+                    ((or (equal (expand-file-name root) (expand-file-name dir-locals-root))
+                         (if (functionp otpp-strictly-obey-dir-locals)
+                             (funcall otpp-strictly-obey-dir-locals dir root dir-locals-root)
+                           otpp-strictly-obey-dir-locals))))
           (hack-dir-local-variables-non-file-buffer))
         (or otpp-project-name
-            project-vc-name ; BUG: Don't use `project-name' function as it's behaving strangely for nested projects
+            ;; BUG: Don't use `project-name' function as it's behaving strangely for nested projects
+            (bound-and-true-p project-vc-name)
             (file-name-nondirectory (directory-file-name root)))))))
 
 ;;;###autoload
@@ -527,9 +529,6 @@ Call ORIG-FN with ARGS otherwise."
   "Run commands in `otpp-override-commands' in the current's tab directory."
   :group 'otpp
   :global t
-  (when (listp (car otpp-override-commands)) ;; TEMP: Remove this hack in next major version
-    (warn "Please note that in v2.0.0, the `otpp-override-commands' type has changed. Please update your configuration accordingly.")
-    (setq otpp-override-commands (append (mapcar #'cdr otpp-override-commands))))
   (dolist (cmd otpp-override-commands)
     (if otpp-override-mode
         (advice-add cmd :around #'otpp--call-command-in-root-dir-maybe)

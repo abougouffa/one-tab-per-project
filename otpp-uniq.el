@@ -2,11 +2,12 @@
 ;;
 ;; Copyright (C) 2024 Abdelhak Bougouffa
 ;;
-;; Author: Abdelhak Bougouffa <abougouffa@fedoraproject.org>
-;; Maintainer: Abdelhak Bougouffa <abougouffa@fedoraproject.org>
+;; Author: Abdelhak Bougouffa (rot13 "nobhtbhssn@srqbencebwrpg.bet")
+;; URL: https://github.com/abougouffa/one-tab-per-project
 ;; Created: July 07, 2024
-;; Modified: July 10, 2024
-;; Package-Requires: ((emacs "29.1"))
+;; Modified: August 15, 2024
+;; Version: 2.0.0
+;; Package-Requires: ((emacs "28.1") (compat "29.1"))
 ;; SPDX-License-Identifier: GPL-3.0
 
 ;;
@@ -23,7 +24,7 @@
 ;;; Code:
 
 (require 'subr-x)
-(require 'cl-macs)
+(require 'cl-lib)
 
 ;;; Unique name from directory
 
