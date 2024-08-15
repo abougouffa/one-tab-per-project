@@ -131,7 +131,7 @@
 
 (require 'seq)
 (require 'project)
-(require 'unique-dir-name)
+(require 'otpp-uniq)
 
 
 (defvar otpp-version "2.0.0")
