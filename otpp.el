@@ -447,7 +447,6 @@ the current's tab directory before executing `project-find-file'."
   (setq otpp-prefix--tab-root-dir (if otpp-override-mode 'no 'yes))
   (add-hook 'pre-command-hook #'otpp--prefixed-command-pch))
 
-(add-hook 'prefix-command-echo-keystrokes-functions #'otpp-argument--description)
 (defun otpp-argument--description ()
   "Add description in echo area when invoking `otpp-prefix'."
   (when otpp-prefix--tab-root-dir
@@ -529,7 +528,10 @@ Call ORIG-FN with ARGS otherwise."
     (let ((advice-fn (intern (format "otpp--%s-a" fn))))
       (if otpp-mode
           (advice-add fn :around advice-fn)
-        (advice-remove fn advice-fn)))))
+        (advice-remove fn advice-fn))))
+  (if otpp-mode
+      (add-hook 'prefix-command-echo-keystrokes-functions #'otpp-argument--description)
+    (remove-hook 'prefix-command-echo-keystrokes-functions #'otpp-argument--description)))
 
 ;;;###autoload
 (define-minor-mode otpp-override-mode
