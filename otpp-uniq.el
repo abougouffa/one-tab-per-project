@@ -7,7 +7,6 @@
 ;; Created: July 07, 2024
 ;; Modified: August 15, 2024
 ;; Version: 3.0.0
-;; Package-Requires: ((emacs "28.1") (compat "29.1"))
 ;; SPDX-License-Identifier: GPL-3.0
 
 ;;
