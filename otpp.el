@@ -485,7 +485,10 @@ Otherwise, select or create the tab represents the selected project."
 (defun otpp--project-switch-project-a (orig-fn &rest args)
   "Switch to the selected project's tab if it exists.
 Call ORIG-FN with ARGS otherwise."
-  (let ((proj-dir (expand-file-name (or (car args) (funcall project-prompter)))))
+  (let ((proj-dir (expand-file-name (or (car args)
+                                        (if (and (boundp 'project-prompter) (functionp project-prompter)) ; Emacs 30.1
+                                            (funcall project-prompter)
+                                          (project-prompt-project-dir))))))
     (if (otpp-select-or-create-tab-root-dir proj-dir)
         (funcall orig-fn proj-dir)
       (if (not (file-in-directory-p default-directory proj-dir))
