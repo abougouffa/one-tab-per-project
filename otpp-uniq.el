@@ -6,7 +6,7 @@
 ;; URL: https://github.com/abougouffa/one-tab-per-project
 ;; Created: July 07, 2024
 ;; Modified: August 15, 2024
-;; Version: 3.0.0
+;; Version: 3.0.1
 ;; SPDX-License-Identifier: GPL-3.0
 
 ;;
