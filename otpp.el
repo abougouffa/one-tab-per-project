@@ -236,12 +236,6 @@ tab directory."
 ;;;###autoload(put 'otpp-project-name 'safe-local-variable 'stringp)
 ;;;###autoload(put 'otpp-project-name 'permanent-local-hook t)
 
-;;; Obsolete definitions
-
-(define-obsolete-function-alias 'otpp-remap-commands-mode 'otpp-override-mode "2.0.0")
-(define-obsolete-function-alias 'otpp-tab-restricted-commands 'otpp-override-commands "2.0.0")
-(make-obsolete-variable 'otpp-after-define-commands-hook nil "2.0.0")
-
 ;;; Internals and helpers
 
 (defvar otpp--unique-tabs-map (make-hash-table :test 'equal))
