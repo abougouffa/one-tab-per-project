@@ -231,10 +231,10 @@ tab directory."
 
 (defvar-local otpp-project-name nil)
 
-;;;###autoload(put 'project-vc-name 'safe-local-variable 'stringp)
-;;;###autoload(put 'project-vc-name 'permanent-local-hook t)
-;;;###autoload(put 'otpp-project-name 'safe-local-variable 'stringp)
-;;;###autoload(put 'otpp-project-name 'permanent-local-hook t)
+;;;###autoload
+(put 'otpp-project-name 'safe-local-variable 'stringp)
+;;;###autoload
+(put 'otpp-project-name 'permanent-local-hook t)
 
 ;;; Internals and helpers
 
