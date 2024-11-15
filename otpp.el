@@ -266,7 +266,7 @@ tab directory."
 
 (defun otpp--apply-interactively (func &optional args)
   "Apply FUNC to ARGS interactively."
-  (apply #'funcall-interactively (append (list func) args)))
+  (apply #'funcall-interactively (cons func args)))
 
 (defvar otpp-run-command-in-tab-root-dir nil)
 
@@ -404,28 +404,23 @@ Returns non-nil if a new tab was created, and nil otherwise."
 ;;; The `otpp-prefix' implementation
 
 (defvar otpp-prefix--tab-root-dir nil)
-(defvar otpp-prefix-skip-commands
-  '(execute-extended-command self-insert-command
-    vertico-next vertico-previous minibuffer-complete
-    icomplete-forward-completions icomplete-backward-completions))
 
 (defun otpp--prefixed-command-pch ()
-  "Post command hook for `otpp-prefix'."
-  ;; TODO: Stupid hack to skip these commands, need to be implemented more properly
-  (unless (memq this-command otpp-prefix-skip-commands)
-    (remove-hook 'pre-command-hook #'otpp--prefixed-command-pch)
-    (let ((cmd this-command)
-          (run-cmd-in-root-dir (eq otpp-prefix--tab-root-dir 'yes)))
-      (setq this-command
-            (lambda ()
-              (interactive)
-              (when otpp-verbose (message "Running `%s' with `otpp-prefix'" cmd))
-              (setq this-command cmd)
-              (let ((otpp-run-command-in-tab-root-dir run-cmd-in-root-dir))
-                (if run-cmd-in-root-dir ; Just run the command with `otpp-run-command-in-tab-root-dir' bound to nil
-                    (otpp--apply-interactively cmd)
-                  (otpp--call-command-in-root-dir-maybe cmd)))))
-      (setq otpp-prefix--tab-root-dir nil))))
+  "Pre-command hook for `otpp-prefix'."
+  (let ((cmd this-command)
+        (run-cmd-in-root-dir (eq otpp-prefix--tab-root-dir 'yes))
+        (minibuf-depth (minibuffer-depth)))
+    (unless (> (minibuffer-depth) minibuf-depth)
+      (remove-hook 'pre-command-hook #'otpp--prefixed-command-pch))
+    (setq this-command
+          (lambda ()
+            (interactive)
+            (when otpp-verbose (message "Running `%s' with `otpp-prefix'" cmd))
+            (let ((otpp-run-command-in-tab-root-dir run-cmd-in-root-dir))
+              (if run-cmd-in-root-dir ; Just run the command with `otpp-run-command-in-tab-root-dir' bound to nil
+                  (otpp--apply-interactively cmd)
+                (otpp--call-command-in-root-dir-maybe cmd)))))
+    (setq otpp-prefix--tab-root-dir nil)))
 
 (eval-when-compile (defvar otpp-override-mode))
 (defun otpp-prefix ()
