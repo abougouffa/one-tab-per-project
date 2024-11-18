@@ -1,3 +1,5 @@
+<a href="https://melpa.org/#/otpp"><img align="center" alt="MELPA" src="https://melpa.org/packages/otpp-badge.svg"/></a>
+
 <a href="https://github.com/abougouffa/one-tab-per-project"><img src="https://www.gnu.org/software/emacs/images/emacs.png" alt="Emacs Logo" width="80" height="80" align="right"></a>
 ## otpp.el
 *One tab per project, with unique names*
