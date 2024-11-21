@@ -5,8 +5,7 @@
 ;; Author: Abdelhak Bougouffa (rot13 "nobhtbhssn@srqbencebwrpg.bet")
 ;; URL: https://github.com/abougouffa/one-tab-per-project
 ;; Created: July 07, 2024
-;; Modified: August 15, 2024
-;; Version: 3.0.1
+;; Modified: November 21, 2024
 ;; SPDX-License-Identifier: GPL-3.0
 
 ;;
@@ -41,8 +40,11 @@
 Consider custom base names BASE1 and BASE2 when non-nil."
   (let* ((els1 (otpp-uniq--get-dir-elements dir1))
          (els2 (otpp-uniq--get-dir-elements dir2)))
-    (when base1 (push base1 els1))
-    (when base2 (push base2 els2))
+    ;; Consider custom base names only when they aren't the same as the directory base
+    (when (and base1 (not (equal base1 (car els1))))
+      (push base1 els1))
+    (when (and base2 (not (equal base2 (car els2))))
+      (push base2 els2))
     (while-let ((el1 (car els1))
                 (el2 (car els2))
                 ((string= el1 el2)))
@@ -141,3 +143,7 @@ For the meaning of :MAP and :RENAME-FN, see `otpp-uniq-register'."
 
 (provide 'otpp-uniq)
 ;;; otpp-uniq.el ends here
+
+;; Local Variables:
+;; package-lint-main-file: "otpp.el"
+;; End:
