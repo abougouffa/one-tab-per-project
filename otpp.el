@@ -5,8 +5,8 @@
 ;; Author: Abdelhak Bougouffa (rot13 "nobhtbhssn@srqbencebwrpg.bet")
 ;; URL: https://github.com/abougouffa/one-tab-per-project
 ;; Created: July 07, 2024
-;; Modified: August 15, 2024
-;; Version: 3.0.2
+;; Modified: November 21, 2024
+;; Version: 3.0.3
 ;; Package-Requires: ((emacs "28.1") (compat "29.1"))
 ;; Keywords: convenience
 ;; SPDX-License-Identifier: GPL-3.0
