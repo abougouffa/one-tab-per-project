@@ -244,7 +244,7 @@ tab directory."
   "Update all the unique tab names from the root directories."
   (otpp--cleanup-unique-map)
   (dolist (tab (funcall tab-bar-tabs-function))
-    (when-let* ((path (alist-get 'otpp-root-dir tab))
+    (when-let* ((path (otpp-get-tab-root-dir tab))
                 (unique (gethash path otpp--unique-tabs-map)))
       (let ((explicit-name (assoc 'explicit-name tab)))
         ;; Don't update the tab name if it was renamed explicitly using `tab-bar-rename-tab'
@@ -259,7 +259,7 @@ tab directory."
         (seq-filter
          (lambda (dir)
            (not (cl-some
-                 (lambda (tab) (equal (expand-file-name dir) (alist-get 'otpp-root-dir tab)))
+                 (lambda (tab) (equal (expand-file-name dir) (otpp-get-tab-root-dir tab)))
                  (funcall tab-bar-tabs-function))))
          (hash-table-keys otpp--unique-tabs-map)))
   (otpp-uniq-update-all :map 'otpp--unique-tabs-map))
@@ -272,15 +272,17 @@ tab directory."
 
 (defun otpp--call-command-in-root-dir-maybe (cmd &rest args)
   "Run CMD with ARGS in `otpp-root-dir' dep. on `otpp-run-command-in-tab-root-dir'."
-  (let ((default-directory (or (and otpp-run-command-in-tab-root-dir (otpp-current-tab-root-dir))
+  (let ((default-directory (or (and otpp-run-command-in-tab-root-dir (otpp-get-tab-root-dir))
                                default-directory)))
     (otpp--apply-interactively cmd args)))
 
 ;;; API
 
-(defun otpp-current-tab-root-dir ()
-  "Get the root directory set to the current tab."
-  (alist-get 'otpp-root-dir (tab-bar--current-tab)))
+(defun otpp-get-tab-root-dir (&optional tab)
+  "Get the root directory set to the TAB, default to the current tab."
+  (alist-get 'otpp-root-dir (or tab (tab-bar--current-tab))))
+
+(define-obsolete-function-alias 'otpp-current-tab-root-dir #'otpp-get-tab-root-dir "3.0.3")
 
 (defun otpp-project-name (dir)
   "Get the project name from DIR.
@@ -387,7 +389,7 @@ When DIR is empty or nil, delete it from the tab."
 (defun otpp-find-tabs-by-root-dir (dir)
   "Return a list of tabs that have DIR as `otpp-root-dir' attribute."
   (seq-filter
-   (lambda (tab) (equal (expand-file-name dir) (alist-get 'otpp-root-dir tab)))
+   (lambda (tab) (equal (expand-file-name dir) (otpp-get-tab-root-dir tab)))
    (funcall tab-bar-tabs-function)))
 
 (defun otpp-select-or-create-tab-root-dir (dir)
@@ -466,7 +468,7 @@ Otherwise, select or create the tab represents the selected project."
          (maybe-prompt (car args))
          (proj-dir (and proj-curr (project-root proj-curr))))
     (when (and maybe-prompt proj-dir)
-      (let ((curr-tab-root-dir (otpp-current-tab-root-dir))
+      (let ((curr-tab-root-dir (otpp-get-tab-root-dir))
             (target-proj-root-dir (expand-file-name proj-dir)))
         (unless (equal curr-tab-root-dir target-proj-root-dir)
           (if (or curr-tab-root-dir (otpp-find-tabs-by-root-dir target-proj-root-dir) otpp-preserve-non-otpp-tabs)
