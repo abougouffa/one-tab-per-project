@@ -1,15 +1,15 @@
-<a href="https://melpa.org/#/otpp"><img align="center" alt="MELPA" src="https://melpa.org/packages/otpp-badge.svg"/></a>
-
 <a href="https://github.com/abougouffa/one-tab-per-project"><img src="https://www.gnu.org/software/emacs/images/emacs.png" alt="Emacs Logo" width="80" height="80" align="right"></a>
 ## otpp.el
 *One tab per project, with unique names*
 
 ---
+[![MELPA](http://melpa.org/packages/otpp-badge.svg)](http://melpa.org/#/otpp)
+[![MELPA Stable](http://stable.melpa.org/packages/otpp-badge.svg)](http://stable.melpa.org/#/otpp)
 
 This is a lightweight workspace management package that provides a thin layer
 between builtin packages `project` and `tab-bar`. The whole idea consists of
-creating a tab per opened project while ensuring unique names for the created
-tabs (when multiple opened projects have the same name).
+creating a _tab per opened project_ while ensuring unique names for the
+created tabs (when multiple opened projects have the same name).
 
 This package is inspired by `project-tab-groups` which creates a "tab group"
 per project.
@@ -17,12 +17,11 @@ per project.
 ### Installation
 
 
-This package is not yet on MELPA, you need to installed from the GitHub
-repository.
+This package is available on MELPA.
 
 ```emacs-lisp
 (use-package otpp
-  :straight (:host github :repo "abougouffa/one-tab-per-project")
+  :straight t
   :after project
   :init
   ;; If you like to define some aliases for better user experience
@@ -56,8 +55,7 @@ this:
   different path. In this case, `otpp` will create a tab named
   `backend[project2]` and renames the previously opened tab to
   `backend[project1]`. This conflict resolution is provided by the
-  `otpp-uniq` library, which works like the built-in `uniquify` library used
-  to keep distinct names for buffer names.
+  `otpp-uniq` library.
 
 - For some cases, you might need to attach a manually created tab (by
   `tab-bar-new-tab`) to an opened project so you have two tabs dedicated to
@@ -67,16 +65,17 @@ this:
 
 - When you use some commands to jump to a file (`find-file`,
   `xref-find-definitions`, etc.), you can end up with a buffer belonging to a
-  different project but displayed in the current project's tab. In this case,
-  you can call `otpp-detach-buffer-to-tab` to create a new tab dedicated to
-  the current buffer's project. When `otpp-allow-detach-projectless-buffer`
-  is non-nil, create a new tab even if the buffer doesn't belong to a
-  project.
+  _different project (lets say `B`)_ but displayed in the current project's
+  tab _(`A`)_. In this case, you can call `otpp-detach-buffer-to-tab` to
+  create a new tab dedicated to the buffer's project `B`. When the opened
+  buffer is project-less (not part of a project), the command will signal a
+  user error unless `otpp-allow-detach-projectless-buffer` is non-nil, in
+  this case, `otpp` creates a new project-less tab for the buffer.
 
 ### Advanced usage
 
 
-Consider this usecase: supposing you are using `otpp-mode` and you've run
+Consider this use case: supposing you are using `otpp-mode` and you've run
 `project-switch-project` to open the `X` project in a new `X` tab. Now you
 `M-x find-file` then you open the `test.cpp` file outside the current `X`
 project. Now, if you run `project-find-file`, you will be in one of these two
@@ -89,10 +88,10 @@ situations:
 you to select a project first, then to select a file.
 
 For this, `otpp` provides `otpp-prefix` (we recommend to bind it to some key,
-using this prefix from `M-x` can have some limitations). When you run
-`otpp-prefix` followed by `C-x p f` for example, you will be prompted for
-files in the current's tab project files even if you are visiting a file
-outside of the current project.
+like `C-x t P`, using `otpp-prefix` from `M-x` can have some limitations).
+When you run `otpp-prefix` followed by `C-x p f` for example, you will be
+prompted for files in the current's tab project files even if you are
+visiting a file outside of the current project.
 
 In my workflow, I would like to always restrict the commands like
 `project-find-file` and `project-kill-buffers` to the project bound to the
@@ -127,7 +126,9 @@ before.
   provide workspace management with `tab-bar` and with an integration with
   `project`. Contrary to `otpp` and `project-tab-groups`, `tabspaces` don't
   create tabs automatically, you need to call specific commands like
-  `tabspaces-open-or-create-project-and-workspace`.
+  `tabspaces-open-or-create-project-and-workspace`. Also, `tabspaces`
+  behavior isn't predictable when you open several projects with the same
+  directory name.
 
 
 
@@ -136,6 +137,16 @@ before.
 #### `otpp-preserve-non-otpp-tabs`
 
 When non-nil, preserve the current rootless tab when switching projects.
+
+#### `otpp-bury-on-kill-buffer-when-multiple-tabs`
+
+Bury the current buffer when killed but it is opened in another tab.
+
+When non-nil, this modifies the behavior of `kill-buffer` when killing
+the current buffer. If the current buffer is opened in another tab, we
+bury it instead of killing it. This only affects the current buffer,
+when we explicitly select another buffer to kill, `otpp` assumes that we
+have a good reason to kill it.
 
 #### `otpp-reconnect-tab`
 
@@ -188,11 +199,15 @@ A list of commands to be advised in `otpp-override-mode`.
 These commands will be run with `default-directory` set the to current's
 tab directory.
 
+#### `otpp-default-tab-name`
+
+The default tab name to use when the last otpp tab is killed.
+
 ### Function and Macro Documentation
 
-#### `(otpp-current-tab-root-dir)`
+#### `(otpp-get-tab-root-dir &optional TAB)`
 
-Get the root directory set to the current tab.
+Get the root directory set to the TAB, default to the current tab.
 
 #### `(otpp-project-name DIR)`
 
