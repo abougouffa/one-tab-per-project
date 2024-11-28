@@ -5,7 +5,7 @@
 ;; Author: Abdelhak Bougouffa (rot13 "nobhtbhssn@srqbencebwrpg.bet")
 ;; URL: https://github.com/abougouffa/one-tab-per-project
 ;; Created: July 07, 2024
-;; Modified: November 21, 2024
+;; Modified: November 28, 2024
 ;; Version: 3.0.3
 ;; Package-Requires: ((emacs "28.1") (compat "29.1"))
 ;; Keywords: convenience
@@ -149,6 +149,18 @@
   :group 'otpp
   :type 'boolean
   :version "0.1.0")
+
+(defcustom otpp-bury-on-kill-buffer-when-multiple-tabs t
+  "Bury the current buffer when killed but it is opened in another tab.
+
+When non-nil, this modifies the behavior of `kill-buffer' when killing
+the current buffer. If the current buffer is opened in another tab, we
+bury it instead of killing it. This only affects the current buffer,
+when we explicitly select another buffer to kill, `otpp' assumes that we
+have a good reason to kill it."
+  :group 'otpp
+  :type 'boolean
+  :version "3.1.0")
 
 (defcustom otpp-reconnect-tab t
   "Whether to reconnect a disconnected tab when switching to it.
@@ -507,6 +519,16 @@ Call ORIG-FN with ARGS otherwise."
       (otpp-uniq-unregister curr-tab-root-dir :map 'otpp--unique-tabs-map)
       (otpp--update-all-tabs))))
 
+(defun otpp--bury-on-kill-buffer-in-multiple-tabs-a (fn buffer)
+  "Advise `kill-buffer' FN to burry BUFFER when it is visible in other tabs."
+  (if-let* ((tabs (and otpp-bury-on-kill-buffer-when-multiple-tabs
+                       (eq (get-buffer buffer) (current-buffer))
+                       (tab-bar-get-buffer-tab buffer nil t t))))
+      (progn
+        (message "Buffer still alive in %d tab%s, burying it instead." (length tabs) (if (length> tabs 1) "s" ""))
+        (bury-buffer))
+    (funcall fn buffer)))
+
 
 ;;; OTPP modes
 
@@ -521,8 +543,11 @@ Call ORIG-FN with ARGS otherwise."
           (advice-add fn :around advice-fn)
         (advice-remove fn advice-fn))))
   (if otpp-mode
-      (add-hook 'prefix-command-echo-keystrokes-functions #'otpp-argument--description)
-    (remove-hook 'prefix-command-echo-keystrokes-functions #'otpp-argument--description)))
+      (progn
+        (add-hook 'prefix-command-echo-keystrokes-functions #'otpp-argument--description)
+        (advice-add 'kill-buffer :around #'otpp--bury-on-kill-buffer-in-multiple-tabs-a))
+    (remove-hook 'prefix-command-echo-keystrokes-functions #'otpp-argument--description)
+    (advice-remove 'kill-buffer #'otpp--bury-on-kill-buffer-in-multiple-tabs-a)))
 
 ;;;###autoload
 (define-minor-mode otpp-override-mode
