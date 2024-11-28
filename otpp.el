@@ -519,10 +519,10 @@ Call ORIG-FN with ARGS otherwise."
       (otpp-uniq-unregister curr-tab-root-dir :map 'otpp--unique-tabs-map)
       (otpp--update-all-tabs))))
 
-(defun otpp--bury-on-kill-buffer-in-multiple-tabs-a (fn buffer)
+(defun otpp--bury-on-kill-buffer-in-multiple-tabs-a (fn &optional buffer)
   "Advise `kill-buffer' FN to burry BUFFER when it is visible in other tabs."
   (if-let* ((tabs (and otpp-bury-on-kill-buffer-when-multiple-tabs
-                       (eq (get-buffer buffer) (current-buffer))
+                       buffer (eq (get-buffer buffer) (current-buffer))
                        (tab-bar-get-buffer-tab buffer nil t t))))
       (progn
         (message "Buffer still alive in %d tab%s, burying it instead." (length tabs) (if (length> tabs 1) "s" ""))
