@@ -239,6 +239,11 @@ tab directory."
   :group 'otpp
   :version "1.2.0")
 
+(defcustom otpp-default-tab-name "*default*"
+  "The default tab name to use when the last otpp tab is killed."
+  :type '(choice string function)
+  :group 'otpp)
+
 (defvar otpp-verbose nil)
 
 (defvar-local otpp-project-name nil)
@@ -513,7 +518,7 @@ Call ORIG-FN with ARGS otherwise."
         ;; When the tab cannot be removed (last tab), remove the association
         ;; with the current project and rename it to the default
         (otpp-change-tab-root-dir nil)
-        (setcdr (assq 'name curr-tab) "*default*")
+        (setcdr (assq 'name curr-tab) (if (functionp otpp-default-tab-name) (funcall otpp-default-tab-name) otpp-default-tab-name))
         (setcdr (assq 'explicit-name curr-tab) 'def))
       (otpp-uniq-unregister curr-tab-root-dir :map 'otpp--unique-tabs-map)
       (otpp--update-all-tabs))))
