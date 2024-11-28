@@ -328,19 +328,18 @@ When DIR isn't part of any project, returns nil."
     ;; account or not.
     (with-temp-buffer
       (setq default-directory dir)
-      ;; BUG: Force them to nil to ensure we are using the local values
-      (let ((project-vc-name nil)
-            (otpp-project-name nil))
-        (when-let* ((dir-locals-root (car (ensure-list (dir-locals-find-file (expand-file-name "dummy-file" dir)))))
-                    ((or (equal (expand-file-name root) (expand-file-name dir-locals-root))
-                         (if (functionp otpp-strictly-obey-dir-locals)
-                             (funcall otpp-strictly-obey-dir-locals dir root dir-locals-root)
-                           otpp-strictly-obey-dir-locals))))
-          (hack-dir-local-variables-non-file-buffer))
-        (or otpp-project-name
-            ;; BUG: Don't use `project-name' function as it's behaving strangely for nested projects
-            (bound-and-true-p project-vc-name)
-            (file-name-nondirectory (directory-file-name root)))))))
+      (when-let* ((dir-locals-root (car (ensure-list (dir-locals-find-file (expand-file-name "dummy-file" dir)))))
+                  ((or (equal (expand-file-name root) (expand-file-name dir-locals-root))
+                       (if (functionp otpp-strictly-obey-dir-locals)
+                           (funcall otpp-strictly-obey-dir-locals dir root dir-locals-root)
+                         otpp-strictly-obey-dir-locals))))
+        ;; NOTE: Read the local variables, but don't apply them.
+        (hack-dir-local-variables))
+      (or (cl-some (lambda (var)
+                     (or (alist-get var dir-local-variables-alist)
+                         (alist-get var file-local-variables-alist)))
+                   '(otpp-project-name project-vc-name))
+          (file-name-nondirectory (directory-file-name root))))))
 
 ;;;###autoload
 (defun otpp-detach-buffer-to-tab (buffer)
