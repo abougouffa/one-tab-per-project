@@ -261,14 +261,31 @@ tab directory."
 (defun otpp--update-all-tabs ()
   "Update all the unique tab names from the root directories."
   (otpp--cleanup-unique-map)
-  (dolist (tab (funcall tab-bar-tabs-function))
-    (when-let* ((path (otpp-get-tab-root-dir tab))
-                (unique (gethash path otpp--unique-tabs-map)))
-      (let ((explicit-name (assoc 'explicit-name tab)))
-        ;; Don't update the tab name if it was renamed explicitly using `tab-bar-rename-tab'
-        (unless (eq (cdr explicit-name) t)
-          (setcdr (assoc 'name tab) (alist-get 'unique-name unique))
-          (setcdr explicit-name 'otpp))))) ; Set the `explicit-name' to `otpp'
+  (let ((all-tabs (funcall tab-bar-tabs-function)))
+    (dolist (tab all-tabs)
+      (when-let* ((path (otpp-get-tab-root-dir tab))
+                  (unique (gethash path otpp--unique-tabs-map)))
+        (let ((explicit-name (assoc 'explicit-name tab)))
+          ;; Don't update the tab name if it was renamed explicitly using `tab-bar-rename-tab'
+          (unless (eq (cdr explicit-name) t)
+            ;; In case a tab has been created with `otpp-change-tab-root-dir',
+            ;; it will have the same root as another tab and the same entry in
+            ;; the unique map. We get the index of all similar tabs and we add a
+            ;; numeric suffix to them in the same order.
+            (let* ((same-path-tabs-indexes
+                    (mapcar 'tab-bar--tab-index
+                            (seq-filter (lambda (tb)
+                                          (when-let* ((p (otpp-get-tab-root-dir tb)))
+                                            (equal path p)))
+                                        all-tabs)))
+                   (name-suffix (and (length> same-path-tabs-indexes 1)
+                                     (format "<%d>" (1+ (seq-position same-path-tabs-indexes (tab-bar--tab-index tab)))))))
+              (setcdr (assoc 'name tab) (concat (alist-get 'unique-name unique) name-suffix)))
+            ;; Set the `explicit-name' field to `otpp'. This tells us that we
+            ;; are allowed to modify it it next time we update the names, while
+            ;; distinguishing the explicitly named tabs using
+            ;; `tab-bar-rename-tab'.
+            (setcdr explicit-name 'otpp))))))
   (force-mode-line-update))
 
 (defun otpp--cleanup-unique-map ()
