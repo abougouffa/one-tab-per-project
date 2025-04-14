@@ -30,9 +30,6 @@
 ;;   :straight t
 ;;   :after project
 ;;   :init
-;;   ;; If you like to define some aliases for better user experience
-;;   (defalias 'one-tab-per-project-mode 'otpp-mode)
-;;   (defalias 'one-tab-per-project-override-mode 'otpp-override-mode)
 ;;   ;; Enable `otpp-mode' globally
 ;;   (otpp-mode 1)
 ;;   ;; If you want to advice the commands in `otpp-override-commands'
@@ -684,6 +681,12 @@ Call ORIG-FN with ARGS otherwise."
       (advice-remove cmd #'otpp--call-command-in-root-dir-maybe)))
   ;; Enable running the command in the current's tab directory
   (setq otpp-run-command-in-tab-root-dir otpp-override-mode))
+
+
+;;; Define some aliases for better user experience
+
+;;;###autoload(defalias 'one-tab-per-project-mode 'otpp-mode)
+;;;###autoload(defalias 'one-tab-per-project-override-mode 'otpp-override-mode)
 
 
 (provide 'one-tab-per-project)
