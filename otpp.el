@@ -245,6 +245,12 @@ tab directory."
   :type '(choice string function)
   :group 'otpp)
 
+(defcustom otpp-project-aware-commands-regexp "^project\\(?:ion\\)?-"
+  "A regular expression to detect project-aware commands in `otpp-prefix'."
+  :type 'regexp
+  :group 'otpp
+  :version "3.2.0")
+
 (defvar otpp-verbose nil)
 (defvar-local otpp-project-name nil)
 (defvar otpp-uniq-map-default (make-hash-table :test 'equal))
@@ -551,28 +557,9 @@ Returns non-nil if a new tab was created, and nil otherwise."
 
 ;;; The `otpp-prefix' implementation
 
-(defvar otpp-prefix--tab-root-dir nil)
-
-(defun otpp--prefixed-command-pch ()
-  "Pre-command hook for `otpp-prefix'."
-  (let ((cmd this-command)
-        (run-cmd-in-root-dir (eq otpp-prefix--tab-root-dir 'yes))
-        (minibuf-depth (minibuffer-depth)))
-    (unless (> (minibuffer-depth) minibuf-depth)
-      (remove-hook 'pre-command-hook #'otpp--prefixed-command-pch))
-    (setq this-command
-          (lambda ()
-            (interactive)
-            (when otpp-verbose (message "Running `%s' with `otpp-prefix'" cmd))
-            (let ((otpp-run-command-in-tab-root-dir run-cmd-in-root-dir))
-              (if run-cmd-in-root-dir ; Just run the command with `otpp-run-command-in-tab-root-dir' bound to nil
-                  (otpp--apply-interactively cmd)
-                (otpp--call-command-in-root-dir-maybe cmd)))))
-    (setq otpp-prefix--tab-root-dir nil)))
-
-(eval-when-compile (defvar otpp-override-mode))
 (defun otpp-prefix ()
   "Run the next command in the tab's root directory (or not!).
+
 The actual behavior depends on `otpp-override-mode'. For
 instance, when you execute \\[otpp-prefix] followed by
 \\[project-find-file], if the `otpp-override-mode' is
@@ -580,17 +567,22 @@ enabled, this will run the `project-find-file' command in the
 `default-directory', otherwise, it will bind the `default-directory' to
 the current's tab directory before executing `project-find-file'."
   (interactive)
-  (prefix-command-preserve-state)
-  (setq otpp-prefix--tab-root-dir (if otpp-override-mode 'no 'yes))
-  (add-hook 'pre-command-hook #'otpp--prefixed-command-pch))
-
-(defun otpp-argument--description ()
-  "Add description in echo area when invoking `otpp-prefix'."
-  (when otpp-prefix--tab-root-dir
-    (format "Run next command in %s "
-            (if (eq otpp-prefix--tab-root-dir 'yes)
-                "current's tab `ottp' root directory"
-              "default-directory"))))
+  (when-let* ((command (key-binding
+                        (read-key-sequence
+                         (format
+                          "Run next command in %s "
+                          (if otpp-override-mode "default-directory" "current's tab `ottp' root directory")))
+                        t)))
+    (let ((project-aware
+           (or (string-match-p otpp-project-aware-commands-regexp (symbol-name command))
+               (get command 'project-aware)))
+          (root (if otpp-override-mode default-directory (otpp-get-tab-root-dir))))
+      (when otpp-verbose (message "otpp: Running `%s' with `otpp-prefix'" command))
+      (if project-aware
+          (let ((project-current-directory-override root))
+            (call-interactively command))
+        (let ((default-directory root))
+          (call-interactively command))))))
 
 
 ;;; Advices for the integration with `project'
@@ -678,9 +670,7 @@ Call ORIG-FN with ARGS otherwise."
         (advice-remove fn advice-fn))))
   (if otpp-mode
       (progn
-        (add-hook 'prefix-command-echo-keystrokes-functions #'otpp-argument--description)
         (advice-add 'kill-buffer :around #'otpp--bury-on-kill-buffer-in-multiple-tabs-a))
-    (remove-hook 'prefix-command-echo-keystrokes-functions #'otpp-argument--description)
     (advice-remove 'kill-buffer #'otpp--bury-on-kill-buffer-in-multiple-tabs-a)))
 
 ;;;###autoload
