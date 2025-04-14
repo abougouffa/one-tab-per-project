@@ -203,6 +203,10 @@ tab directory.
 
 The default tab name to use when the last otpp tab is killed.
 
+#### `otpp-project-aware-commands-regexp`
+
+A regular expression to detect project-aware commands in `otpp-prefix`.
+
 ### Function and Macro Documentation
 
 #### `(otpp-get-tab-root-dir &optional TAB)`
