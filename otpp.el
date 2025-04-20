@@ -568,7 +568,7 @@ the current's tab directory before executing `project-find-file'."
                         (read-key-sequence
                          (format
                           "Run next command in %s "
-                          (if otpp-override-mode "default-directory" "current's tab `ottp' root directory")))
+                          (if otpp-override-mode "default-directory" "current's tab `otpp' root directory")))
                         t)))
     (let ((project-aware
            (or (string-match-p otpp-project-aware-commands-regexp (symbol-name command))
