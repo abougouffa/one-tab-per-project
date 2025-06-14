@@ -200,6 +200,12 @@ tab directory.
 
 The default tab name to use when the last otpp tab is killed.
 
+#### `otpp-rename-the-initial-tab`
+
+Rename the initial tab to the default name.
+When `otpp-mode` is enabled and only one tab exists, rename it to
+`otpp-default-tab-name`.
+
 #### `otpp-project-aware-commands-regexp`
 
 A regular expression to detect project-aware commands in `otpp-prefix`.
