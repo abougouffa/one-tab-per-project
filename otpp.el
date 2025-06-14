@@ -242,6 +242,14 @@ tab directory."
   :type '(choice string function)
   :group 'otpp)
 
+(defcustom otpp-rename-the-initial-tab t
+  "Rename the initial tab to the default name.
+When `otpp-mode' is enabled and only one tab exists, rename it to
+`otpp-default-tab-name'."
+  :type 'boolean
+  :group 'otpp
+  :version "3.3.0")
+
 (defcustom otpp-project-aware-commands-regexp "^project\\(?:ion\\)?-"
   "A regular expression to detect project-aware commands in `otpp-prefix'."
   :type 'regexp
@@ -675,7 +683,16 @@ Call ORIG-FN with ARGS otherwise."
         (advice-add cmd :around #'otpp--call-command-in-root-dir-maybe)
       (advice-remove cmd #'otpp--call-command-in-root-dir-maybe)))
   ;; Enable running the command in the current's tab directory
-  (setq otpp-run-command-in-tab-root-dir otpp-override-mode))
+  (setq otpp-run-command-in-tab-root-dir otpp-override-mode)
+
+  ;; Rename the first tab to "*default*"
+  (when-let* ((otpp-rename-the-initial-tab)
+              (tabs (funcall tab-bar-tabs-function))
+              ((length= tabs 1))
+              (tab (assq 'current-tab tabs)))
+    ;; A softer explicit name flag, so `otpp' can change it if relevant
+    (setcdr (assq 'name tab) (if (functionp otpp-default-tab-name) (funcall otpp-default-tab-name) otpp-default-tab-name))
+    (setcdr (assq 'explicit-name tab) 'def)))
 
 
 ;;; Define some aliases for better user experience
