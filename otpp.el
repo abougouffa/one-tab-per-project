@@ -485,9 +485,9 @@ When DIR isn't part of any project, returns nil."
 When called with the a prefix, it asks for the buffer."
   (interactive (list (if current-prefix-arg (read-buffer "Select the buffer (leave empty for an unnamed buffer): ") (current-buffer))))
   (with-current-buffer buffer
-    (if-let ((proj (project-current))
-             (proj-root (project-root proj))
-             (this-buff (current-buffer)))
+    (if-let* ((proj (project-current))
+              (proj-root (project-root proj))
+              (this-buff (current-buffer)))
         (progn
           (bury-buffer)
           (otpp-select-or-create-tab-root-dir proj-root)
@@ -544,7 +544,7 @@ When DIR is empty or nil, delete it from the tab."
 (defun otpp-select-or-create-tab-root-dir (dir)
   "Select or create the tab with root directory DIR.
 Returns non-nil if a new tab was created, and nil otherwise."
-  (if-let ((tab (car (otpp-find-tabs-by-root-dir dir))))
+  (if-let* ((tab (car (otpp-find-tabs-by-root-dir dir))))
       (prog1 nil
         (tab-bar-select-tab (1+ (tab-bar--tab-index tab))))
     (tab-bar-new-tab)
@@ -570,9 +570,8 @@ the current's tab directory before executing `project-find-file'."
                           "Run next command in %s "
                           (if otpp-override-mode "default-directory" "current's tab `otpp' root directory")))
                         t)))
-    (let ((project-aware
-           (or (string-match-p otpp-project-aware-commands-regexp (symbol-name command))
-               (get command 'project-aware)))
+    (let ((project-aware (or (string-match-p otpp-project-aware-commands-regexp (symbol-name command))
+                             (get command 'project-aware)))
           (root (if otpp-override-mode default-directory (otpp-get-tab-root-dir))))
       (when otpp-verbose (message "otpp: Running `%s' with `otpp-prefix'" command))
       (if project-aware
@@ -599,53 +598,50 @@ the value of `otpp-preserve-non-otpp-tabs' is nil, then set the root
 directory for the current tab to represent the selected project.
 
 Otherwise, select or create the tab represents the selected project."
-  (let* ((proj-curr (apply orig-fn args))
-         (maybe-prompt (car args))
-         (proj-dir (and proj-curr (project-root proj-curr))))
-    (when (and maybe-prompt proj-dir)
-      (let ((curr-tab-root-dir (otpp-get-tab-root-dir))
-            (target-proj-root-dir (expand-file-name proj-dir)))
-        (unless (equal curr-tab-root-dir target-proj-root-dir)
-          (if (or curr-tab-root-dir (otpp-find-tabs-by-root-dir target-proj-root-dir) otpp-preserve-non-otpp-tabs)
-              (otpp-select-or-create-tab-root-dir target-proj-root-dir)
-            (otpp-change-tab-root-dir target-proj-root-dir)))))
+  (when-let* ((proj-curr (apply orig-fn args))
+              (proj-dir (project-root proj-curr))
+              (maybe-prompt (car args)))
+    (let ((curr-tab-root-dir (otpp-get-tab-root-dir))
+          (target-proj-root-dir (expand-file-name proj-dir)))
+      (unless (equal curr-tab-root-dir target-proj-root-dir)
+        (if (or curr-tab-root-dir (otpp-find-tabs-by-root-dir target-proj-root-dir) otpp-preserve-non-otpp-tabs)
+            (otpp-select-or-create-tab-root-dir target-proj-root-dir)
+          (otpp-change-tab-root-dir target-proj-root-dir))))
     proj-curr))
 
 (defun otpp--project-switch-project-a (orig-fn &rest args)
   "Switch to the selected project's tab if it exists.
 Call ORIG-FN with ARGS otherwise."
-  (let ((proj-dir (expand-file-name (or (car args)
-                                        (if (and (boundp 'project-prompter) (functionp project-prompter)) ; Emacs 30.1
-                                            (funcall project-prompter)
-                                          (project-prompt-project-dir))))))
-    (if (otpp-select-or-create-tab-root-dir proj-dir)
-        (funcall orig-fn proj-dir)
-      (if (not (file-in-directory-p default-directory proj-dir))
-          (if (functionp otpp-reconnect-tab)
-              (funcall otpp-reconnect-tab proj-dir)
-            (when otpp-reconnect-tab
-              (funcall orig-fn proj-dir)))))))
+  (let ((proj-dir (expand-file-name
+                   (or (car args)
+                       (if (and (boundp 'project-prompter) (functionp project-prompter)) ; Emacs 30.1
+                           (funcall project-prompter)
+                         (project-prompt-project-dir))))))
+    (cond ((otpp-select-or-create-tab-root-dir proj-dir) (funcall orig-fn proj-dir))
+          ((not (file-in-directory-p default-directory proj-dir))
+           (cond ((functionp otpp-reconnect-tab) (funcall otpp-reconnect-tab proj-dir))
+                 (otpp-reconnect-tab (funcall orig-fn proj-dir)))))))
 
 (defun otpp--project-kill-buffers-a (orig-fn &rest args)
   "Call ORIG-FN with ARGS, then close the current tab group, if any."
-  (when (apply orig-fn args)
-    (when-let* ((tabs (funcall tab-bar-tabs-function))
-                (curr-tab (assq 'current-tab tabs))
-                (curr-tab-root-dir (alist-get 'otpp-root-dir curr-tab)))
-      (if (length> tabs 1)
-          (tab-bar-close-tab)
-        ;; When the tab cannot be removed (last tab), remove the association
-        ;; with the current project and rename it to the default
-        (otpp-change-tab-root-dir nil)
-        (setcdr (assq 'name curr-tab) (if (functionp otpp-default-tab-name) (funcall otpp-default-tab-name) otpp-default-tab-name))
-        (setcdr (assq 'explicit-name curr-tab) 'def))
-      (otpp-uniq-unregister curr-tab-root-dir :map 'otpp--unique-tabs-map)
-      (otpp--update-all-tabs))))
+  (when-let* (((apply orig-fn args))
+              (tabs (funcall tab-bar-tabs-function))
+              (curr-tab (assq 'current-tab tabs))
+              (curr-tab-root-dir (alist-get 'otpp-root-dir curr-tab)))
+    (if (length> tabs 1)
+        (tab-bar-close-tab)
+      ;; When the tab cannot be removed (last tab), remove the association
+      ;; with the current project and rename it to the default
+      (otpp-change-tab-root-dir nil)
+      (setcdr (assq 'name curr-tab) (if (functionp otpp-default-tab-name) (funcall otpp-default-tab-name) otpp-default-tab-name))
+      (setcdr (assq 'explicit-name curr-tab) 'def))
+    (otpp-uniq-unregister curr-tab-root-dir :map 'otpp--unique-tabs-map)
+    (otpp--update-all-tabs)))
 
 (defun otpp--bury-on-kill-buffer-in-multiple-tabs-a (fn &optional buffer)
   "Advise `kill-buffer' FN to burry BUFFER when it is visible in other tabs."
-  (if-let* ((tabs (and otpp-bury-on-kill-buffer-when-multiple-tabs
-                       buffer (eq (get-buffer buffer) (current-buffer))
+  (if-let* ((tabs (and otpp-bury-on-kill-buffer-when-multiple-tabs buffer
+                       (eq (get-buffer buffer) (current-buffer))
                        (tab-bar-get-buffer-tab buffer nil t t))))
       (progn
         (message "Buffer still alive in %d tab%s, burying it instead." (length tabs) (if (length> tabs 1) "s" ""))
@@ -666,8 +662,7 @@ Call ORIG-FN with ARGS otherwise."
           (advice-add fn :around advice-fn)
         (advice-remove fn advice-fn))))
   (if otpp-mode
-      (progn
-        (advice-add 'kill-buffer :around #'otpp--bury-on-kill-buffer-in-multiple-tabs-a))
+      (advice-add 'kill-buffer :around #'otpp--bury-on-kill-buffer-in-multiple-tabs-a)
     (advice-remove 'kill-buffer #'otpp--bury-on-kill-buffer-in-multiple-tabs-a)))
 
 ;;;###autoload
