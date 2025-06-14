@@ -426,6 +426,10 @@ For the meaning of :MAP and :RENAME-FN, see `otpp-uniq-register'."
   "Apply FUNC to ARGS interactively."
   (apply #'funcall-interactively (cons func args)))
 
+(defun otpp--funcall-or-value (var &rest args)
+  "If VAR is a function call it with ARGS, otherwise return VAR."
+  (if (functionp var) (apply var args) var))
+
 (defvar otpp-run-command-in-tab-root-dir nil)
 
 (defun otpp--call-command-in-root-dir-maybe (cmd &rest args)
@@ -476,9 +480,7 @@ When DIR isn't part of any project, returns nil."
       (setq default-directory dir)
       (when-let* ((dir-locals-root (car (ensure-list (dir-locals-find-file (expand-file-name "dummy-file" dir)))))
                   ((or (equal (expand-file-name root) (expand-file-name dir-locals-root))
-                       (if (functionp otpp-strictly-obey-dir-locals)
-                           (funcall otpp-strictly-obey-dir-locals dir root dir-locals-root)
-                         otpp-strictly-obey-dir-locals))))
+                       (otpp--funcall-or-value otpp-strictly-obey-dir-locals dir root dir-locals-root))))
         ;; NOTE: Read the local variables, but don't apply them.
         (hack-dir-local-variables))
       (or (cl-some (lambda (var)
@@ -500,9 +502,7 @@ When called with the a prefix, it asks for the buffer."
           (bury-buffer)
           (otpp-select-or-create-tab-root-dir proj-root)
           (switch-to-buffer this-buff))
-      (if (or (and (functionp otpp-allow-detach-projectless-buffer)
-                   (funcall otpp-allow-detach-projectless-buffer this-buff))
-              otpp-allow-detach-projectless-buffer)
+      (if (otpp--funcall-or-value otpp-allow-detach-projectless-buffer this-buff)
           (let* ((recent-tabs (mapcar (lambda (tab) (alist-get 'name tab)) (tab-bar--tabs-recent)))
                  (tab-name (completing-read "Switch to tab by name (leave empty to create an unnamed tab): " recent-tabs)))
             (bury-buffer)
@@ -641,7 +641,7 @@ Call ORIG-FN with ARGS otherwise."
       ;; When the tab cannot be removed (last tab), remove the association
       ;; with the current project and rename it to the default
       (otpp-change-tab-root-dir nil)
-      (setcdr (assq 'name curr-tab) (if (functionp otpp-default-tab-name) (funcall otpp-default-tab-name) otpp-default-tab-name))
+      (setcdr (assq 'name curr-tab) (otpp--funcall-or-value otpp-default-tab-name))
       (setcdr (assq 'explicit-name curr-tab) 'def))
     (otpp-uniq-unregister curr-tab-root-dir :map 'otpp--unique-tabs-map)
     (otpp--update-all-tabs)))
@@ -691,7 +691,7 @@ Call ORIG-FN with ARGS otherwise."
               ((length= tabs 1))
               (tab (assq 'current-tab tabs)))
     ;; A softer explicit name flag, so `otpp' can change it if relevant
-    (setcdr (assq 'name tab) (if (functionp otpp-default-tab-name) (funcall otpp-default-tab-name) otpp-default-tab-name))
+    (setcdr (assq 'name tab) (otpp--funcall-or-value otpp-default-tab-name))
     (setcdr (assq 'explicit-name tab) 'def)))
 
 
