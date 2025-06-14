@@ -422,10 +422,6 @@ For the meaning of :MAP and :RENAME-FN, see `otpp-uniq-register'."
          (hash-table-keys otpp--unique-tabs-map)))
   (otpp-uniq-update-all :map 'otpp--unique-tabs-map))
 
-(defun otpp--apply-interactively (func &optional args)
-  "Apply FUNC to ARGS interactively."
-  (apply #'funcall-interactively (cons func args)))
-
 (defun otpp--funcall-or-value (var &rest args)
   "If VAR is a function call it with ARGS, otherwise return VAR."
   (if (functionp var) (apply var args) var))
@@ -436,7 +432,7 @@ For the meaning of :MAP and :RENAME-FN, see `otpp-uniq-register'."
   "Run CMD with ARGS in `otpp-root-dir' dep. on `otpp-run-command-in-tab-root-dir'."
   (let ((default-directory (or (and otpp-run-command-in-tab-root-dir (otpp-get-tab-root-dir))
                                default-directory)))
-    (otpp--apply-interactively cmd args)))
+    (apply #'funcall-interactively (cons cmd args))))
 
 ;;; API
 
