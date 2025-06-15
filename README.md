@@ -131,10 +131,6 @@ before.
 
 ### Customization Documentation
 
-#### `otpp-preserve-non-otpp-tabs`
-
-When non-nil, preserve the current rootless tab when switching projects.
-
 #### `otpp-bury-on-kill-buffer-when-multiple-tabs`
 
 Bury the current buffer when killed but it is opened in another tab.
