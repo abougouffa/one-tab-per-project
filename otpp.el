@@ -142,12 +142,6 @@
   :group 'project
   :prefix "otpp-")
 
-(defcustom otpp-preserve-non-otpp-tabs t
-  "When non-nil, preserve the current rootless tab when switching projects."
-  :group 'otpp
-  :type 'boolean
-  :version "0.1.0")
-
 (defcustom otpp-bury-on-kill-buffer-when-multiple-tabs t
   "Bury the current buffer when killed but it is opened in another tab.
 
@@ -612,20 +606,14 @@ project when prompted.
 
 Does nothing if the current tab belongs to the selected project.
 
-If the current tab does not have an `otpp-root-dir' attribute, and if
-the value of `otpp-preserve-non-otpp-tabs' is nil, then set the root
-directory for the current tab to represent the selected project.
-
-Otherwise, select or create the tab represents the selected project."
+Otherwise, select or create the tab of the selected project."
   (let ((proj-curr (apply orig-fn args)))
     (when-let* ((proj-dir (and proj-curr (project-root proj-curr)))
                 (maybe-prompt (car args)))
       (let ((curr-tab-root-dir (otpp-get-tab-root-dir))
             (target-proj-root-dir (expand-file-name proj-dir)))
         (unless (equal curr-tab-root-dir target-proj-root-dir)
-          (if (or curr-tab-root-dir (otpp-find-tabs-by-root-dir target-proj-root-dir) otpp-preserve-non-otpp-tabs)
-              (otpp--select-or-create-tab-root-dir target-proj-root-dir)
-            (otpp-change-tab-root-dir target-proj-root-dir)))))
+          (otpp--select-or-create-tab-root-dir target-proj-root-dir))))
     proj-curr))
 
 (defun otpp--project-switch-project-a (orig-fn &rest args)
