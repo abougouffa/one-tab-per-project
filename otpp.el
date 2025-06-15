@@ -448,7 +448,7 @@ For the meaning of :MAP and :RENAME-FN, see `otpp-uniq-register'."
               (tab (assq 'current-tab tabs)) ; Is the current tab
               ((not (otpp-get-tab-root-dir tab))) ; Not a project tab
               ((or (not (alist-get 'explicit-name tab))
-                   (not (eq (alist-get 'explicit-name tab) 'otpp-def)))))
+                   (eq (alist-get 'explicit-name tab) 'otpp-def))))
     ;; A softer explicit name flag, so `otpp' can change it if relevant
     (setcdr (assq 'name tab) name)
     (setcdr (assq 'explicit-name tab) 'otpp-def)
