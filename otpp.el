@@ -617,15 +617,15 @@ the value of `otpp-preserve-non-otpp-tabs' is nil, then set the root
 directory for the current tab to represent the selected project.
 
 Otherwise, select or create the tab represents the selected project."
-  (when-let* ((proj-curr (apply orig-fn args))
-              (proj-dir (project-root proj-curr))
-              (maybe-prompt (car args)))
-    (let ((curr-tab-root-dir (otpp-get-tab-root-dir))
-          (target-proj-root-dir (expand-file-name proj-dir)))
-      (unless (equal curr-tab-root-dir target-proj-root-dir)
-        (if (or curr-tab-root-dir (otpp-find-tabs-by-root-dir target-proj-root-dir) otpp-preserve-non-otpp-tabs)
-            (otpp-select-or-create-tab-root-dir target-proj-root-dir)
-          (otpp-change-tab-root-dir target-proj-root-dir))))
+  (let ((proj-curr (apply orig-fn args)))
+    (when-let* ((proj-dir (and proj-curr (project-root proj-curr)))
+                (maybe-prompt (car args)))
+      (let ((curr-tab-root-dir (otpp-get-tab-root-dir))
+            (target-proj-root-dir (expand-file-name proj-dir)))
+        (unless (equal curr-tab-root-dir target-proj-root-dir)
+          (if (or curr-tab-root-dir (otpp-find-tabs-by-root-dir target-proj-root-dir) otpp-preserve-non-otpp-tabs)
+              (otpp-select-or-create-tab-root-dir target-proj-root-dir)
+            (otpp-change-tab-root-dir target-proj-root-dir)))))
     proj-curr))
 
 (defun otpp--project-switch-project-a (orig-fn &rest args)
