@@ -632,13 +632,10 @@ Otherwise, select or create the tab represents the selected project."
 (defun otpp--project-switch-project-a (orig-fn &rest args)
   "Switch to the right tab after switching to a project.
 Calls ORIG-FN based on ARGS."
-  (let ((proj-dir (expand-file-name
-                   (or (car args)
-                       (if (functionp (bound-and-true-p project-prompter)) ; Emacs 30.1
-                           (funcall project-prompter)
-                         (project-prompt-project-dir))))))
+  (let ((proj-dir (expand-file-name (or (car args) (when-let* ((proj (project-current t))) (project-root proj)))))
+        (def-calling-dir default-directory)) ; `otpp--select-or-create-tab-root-dir' changes the `default-directory'
     (cond ((otpp--select-or-create-tab-root-dir proj-dir) (funcall orig-fn proj-dir))
-          ((not (file-in-directory-p default-directory proj-dir))
+          ((not (file-in-directory-p def-calling-dir proj-dir))
            (cond ((functionp otpp-reconnect-tab) (funcall otpp-reconnect-tab proj-dir))
                  (otpp-reconnect-tab (funcall orig-fn proj-dir)))))))
 
