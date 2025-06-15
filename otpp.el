@@ -554,8 +554,7 @@ When DIR is empty or nil, delete it from the tab."
    (list (completing-read
           "Root directory for tab (leave blank to remove the tab root directory): "
           (delete-dups
-           (delq nil (mapcar (apply-partially #'alist-get 'otpp-root-dir)
-                             (funcall tab-bar-tabs-function)))))
+           (delq nil (mapcar #'otpp-get-tab-root-dir (funcall tab-bar-tabs-function)))))
          current-prefix-arg))
   (let* ((tabs (funcall tab-bar-tabs-function))
          (index (if tab-number
@@ -644,7 +643,7 @@ Calls ORIG-FN based on ARGS."
   (when-let* (((apply orig-fn args))
               (tabs (funcall tab-bar-tabs-function))
               (curr-tab (assq 'current-tab tabs))
-              (curr-tab-root-dir (alist-get 'otpp-root-dir curr-tab)))
+              (curr-tab-root-dir (otpp-get-tab-root-dir curr-tab)))
     (if (length> tabs 1)
         (tab-bar-close-tab)
       ;; When the tab cannot be removed (last tab), remove the association
