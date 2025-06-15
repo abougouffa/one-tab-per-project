@@ -235,6 +235,11 @@ These commands will be run with `default-directory' set the to current's
 tab directory."
   :type '(repeat function)
   :group 'otpp
+  :set (lambda (symbol value)
+         (let ((was-enabled otpp-override-mode))
+           (when was-enabled (otpp-override-mode -1))
+           (set-default symbol value)
+           (when was-enabled (otpp-override-mode 1))))
   :version "1.2.0")
 
 (defcustom otpp-default-tab-name "*default*"
