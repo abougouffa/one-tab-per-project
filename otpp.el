@@ -426,12 +426,9 @@ For the meaning of :MAP and :RENAME-FN, see `otpp-uniq-register'."
   "If VAR is a function call it with ARGS, otherwise return VAR."
   (if (functionp var) (apply var args) var))
 
-(defvar otpp-run-command-in-tab-root-dir nil)
-
 (defun otpp--call-command-in-root-dir-maybe (cmd &rest args)
-  "Run CMD with ARGS in `otpp-root-dir' dep. on `otpp-run-command-in-tab-root-dir'."
-  (let ((default-directory (or (and otpp-run-command-in-tab-root-dir (otpp-get-tab-root-dir))
-                               default-directory)))
+  "Run CMD with ARGS in `otpp-root-dir' or fallback to `default-directory'."
+  (let ((default-directory (or (otpp-get-tab-root-dir) default-directory)))
     (apply #'funcall-interactively (cons cmd args))))
 
 ;;; API
@@ -697,9 +694,7 @@ Call ORIG-FN with ARGS otherwise."
   (dolist (cmd otpp-override-commands)
     (if otpp-override-mode
         (advice-add cmd :around #'otpp--call-command-in-root-dir-maybe)
-      (advice-remove cmd #'otpp--call-command-in-root-dir-maybe)))
-  ;; Enable running the command in the current's tab directory
-  (setq otpp-run-command-in-tab-root-dir otpp-override-mode))
+      (advice-remove cmd #'otpp--call-command-in-root-dir-maybe))))
 
 
 ;;; Define some aliases for better user experience
