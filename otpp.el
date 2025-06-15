@@ -409,7 +409,7 @@ For the meaning of :MAP and :RENAME-FN, see `otpp-uniq-register'."
             ;; distinguishing the explicitly named tabs using
             ;; `tab-bar-rename-tab'.
             (setcdr explicit-name 'otpp))))))
-  (force-mode-line-update))
+  (force-mode-line-update t))
 
 (defun otpp--cleanup-unique-map ()
   "Cleanup the unique names hash-table."
@@ -441,6 +441,21 @@ For the meaning of :MAP and :RENAME-FN, see `otpp-uniq-register'."
   (alist-get 'otpp-root-dir (or tab (tab-bar--current-tab))))
 
 (define-obsolete-function-alias 'otpp-current-tab-root-dir #'otpp-get-tab-root-dir "3.0.3")
+
+(defun otpp-set-default-tab-name ()
+  "Rename the first tab to `otpp-default-tab-name'."
+  (when-let* ((otpp-rename-the-initial-tab)
+              (name (otpp--funcall-or-value otpp-default-tab-name)) ; We have a default name
+              (tabs (funcall tab-bar-tabs-function))
+              ((length= tabs 1)) ; Only one tab exists
+              (tab (assq 'current-tab tabs)) ; Is the current tab
+              ((not (otpp-get-tab-root-dir tab))) ; Not a project tab
+              ((or (not (alist-get 'explicit-name tab))
+                   (not (eq (alist-get 'explicit-name tab) 'otpp-def)))))
+    ;; A softer explicit name flag, so `otpp' can change it if relevant
+    (setcdr (assq 'name tab) name)
+    (setcdr (assq 'explicit-name tab) 'otpp-def)
+    (force-mode-line-update t)))
 
 (defun otpp-project-name (dir)
   "Get the project name from DIR.
@@ -638,7 +653,7 @@ Call ORIG-FN with ARGS otherwise."
       ;; with the current project and rename it to the default
       (otpp-change-tab-root-dir nil)
       (setcdr (assq 'name curr-tab) (otpp--funcall-or-value otpp-default-tab-name))
-      (setcdr (assq 'explicit-name curr-tab) 'def))
+      (setcdr (assq 'explicit-name curr-tab) 'otpp-def))
     (otpp-uniq-unregister curr-tab-root-dir :map 'otpp--unique-tabs-map)
     (otpp--update-all-tabs)))
 
@@ -666,8 +681,13 @@ Call ORIG-FN with ARGS otherwise."
           (advice-add fn :around advice-fn)
         (advice-remove fn advice-fn))))
   (if otpp-mode
-      (advice-add 'kill-buffer :around #'otpp--bury-on-kill-buffer-in-multiple-tabs-a)
-    (advice-remove 'kill-buffer #'otpp--bury-on-kill-buffer-in-multiple-tabs-a)))
+      (progn
+        (advice-add 'kill-buffer :around #'otpp--bury-on-kill-buffer-in-multiple-tabs-a)
+        ;; Rename the first tab to default name if needed
+        (otpp-set-default-tab-name)
+        (add-hook 'server-after-make-frame-hook #'otpp-set-default-tab-name))
+    (advice-remove 'kill-buffer #'otpp--bury-on-kill-buffer-in-multiple-tabs-a)
+    (remove-hook 'server-after-make-frame-hook #'otpp-set-default-tab-name)))
 
 ;;;###autoload
 (define-minor-mode otpp-override-mode
@@ -679,16 +699,7 @@ Call ORIG-FN with ARGS otherwise."
         (advice-add cmd :around #'otpp--call-command-in-root-dir-maybe)
       (advice-remove cmd #'otpp--call-command-in-root-dir-maybe)))
   ;; Enable running the command in the current's tab directory
-  (setq otpp-run-command-in-tab-root-dir otpp-override-mode)
-
-  ;; Rename the first tab to "*default*"
-  (when-let* ((otpp-rename-the-initial-tab)
-              (tabs (funcall tab-bar-tabs-function))
-              ((length= tabs 1))
-              (tab (assq 'current-tab tabs)))
-    ;; A softer explicit name flag, so `otpp' can change it if relevant
-    (setcdr (assq 'name tab) (otpp--funcall-or-value otpp-default-tab-name))
-    (setcdr (assq 'explicit-name tab) 'def)))
+  (setq otpp-run-command-in-tab-root-dir otpp-override-mode))
 
 
 ;;; Define some aliases for better user experience
