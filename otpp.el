@@ -630,7 +630,7 @@ Otherwise, select or create the tab represents the selected project."
 Call ORIG-FN with ARGS otherwise."
   (let ((proj-dir (expand-file-name
                    (or (car args)
-                       (if (and (boundp 'project-prompter) (functionp project-prompter)) ; Emacs 30.1
+                       (if (functionp (bound-and-true-p project-prompter)) ; Emacs 30.1
                            (funcall project-prompter)
                          (project-prompt-project-dir))))))
     (cond ((otpp-select-or-create-tab-root-dir proj-dir) (funcall orig-fn proj-dir))
