@@ -237,6 +237,10 @@ Then, this function checks in this order:
 3. Return the directory name of the project's root.
 When DIR isn't part of any project, returns nil.
 
+#### `(otpp-find-tabs-by-root-dir DIR)`
+
+Return a list of tabs that have DIR as `otpp-root-dir` attribute.
+
 #### `(otpp-detach-buffer-to-tab BUFFER)`
 
 Create or switch to the tab corresponding to the project of BUFFER.
@@ -248,15 +252,6 @@ Change the `otpp-root-dir` attribute to DIR.
 If if the absolute TAB-NUMBER is provided, set it, otherwise, set the
 current tab.
 When DIR is empty or nil, delete it from the tab.
-
-#### `(otpp-find-tabs-by-root-dir DIR)`
-
-Return a list of tabs that have DIR as `otpp-root-dir` attribute.
-
-#### `(otpp-select-or-create-tab-root-dir DIR)`
-
-Select or create the tab with root directory DIR.
-Returns non-nil if a new tab was created, and nil otherwise.
 
 #### `(otpp-prefix)`
 
