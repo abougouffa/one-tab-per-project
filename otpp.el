@@ -230,7 +230,7 @@ tab directory."
   :type '(repeat function)
   :group 'otpp
   :set (lambda (symbol value)
-         (let ((was-enabled otpp-override-mode))
+         (let ((was-enabled (bound-and-true-p otpp-override-mode)))
            (when was-enabled (otpp-override-mode -1))
            (set-default symbol value)
            (when was-enabled (otpp-override-mode 1))))
