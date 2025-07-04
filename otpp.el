@@ -583,7 +583,8 @@ the current's tab directory before executing `project-find-file'."
                           "Run next command in %s "
                           (if otpp-override-mode "default-directory" "current's tab `otpp' root directory")))
                         t)))
-    (let ((project-aware (or (string-match-p otpp-project-aware-commands-regexp (symbol-name command))
+    (let ((project-aware (or (memq command otpp-override-commands)
+                             (string-match-p otpp-project-aware-commands-regexp (symbol-name command))
                              (get command 'project-aware)))
           (root (if otpp-override-mode default-directory (otpp-get-tab-root-dir))))
       (when otpp-verbose (message "otpp: Running `%s' with `otpp-prefix'" command))
