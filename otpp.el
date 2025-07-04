@@ -645,9 +645,9 @@ Calls ORIG-FN based on ARGS."
 
 (defun otpp--bury-on-kill-buffer-in-multiple-tabs-a (fn &optional buffer)
   "Advise `kill-buffer' FN to burry BUFFER when it is visible in other tabs."
-  (if-let* ((tabs (and otpp-bury-on-kill-buffer-when-multiple-tabs buffer
-                       (eq (get-buffer buffer) (current-buffer))
-                       (tab-bar-get-buffer-tab buffer nil t t))))
+  (if-let* ((tabs (and (not (called-interactively-p)) ; when explicitly killing the current buffer, just obey
+                       otpp-bury-on-kill-buffer-when-multiple-tabs
+                       (tab-bar-get-buffer-tab buffer t t t))))
       (progn
         (message "Buffer still alive in %d tab%s, burying it instead." (length tabs) (if (length> tabs 1) "s" ""))
         (bury-buffer))
