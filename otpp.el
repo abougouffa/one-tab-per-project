@@ -46,8 +46,8 @@
 ;; - When you switch to a project `project-switch-project' (bound by default to
 ;;   `C-x p p`), `otpp' will create a tab with the project name.
 ;;
-;; - When you kill a project with all its buffers with `project-kill-buffers', the
-;;   tab is closed.
+;; - When you kill a project with all its buffers with `project-kill-buffers',
+;;   the tab is closed.
 ;;
 ;; - Lets say you've switched to the project under
 ;;   `/home/user/project1/backend/', `otpp' will create a tab named `backend'
@@ -99,8 +99,8 @@
 ;; current tab, even if I'm visiting a file which is not part of this project.
 ;; If you like this behavior, you can enable the `otpp-override-mode'. This mode
 ;; will advice all the commands defined in `otpp-override-commands' to be ran in
-;; the current's tab root directory (_a.k.a._, in the project bound to the
-;; current tab).
+;; the current's tab root directory (_i.e._, in the project bound to the current
+;; tab).
 ;;
 ;; When `otpp-override-mode' is enabled, the `otpp-prefix' acts inversely. While
 ;; all `otpp-override-commands' are restricted to the current's tab project by
@@ -157,9 +157,8 @@ have a good reason to kill it."
 (defcustom otpp-reconnect-tab t
   "Whether to reconnect a disconnected tab when switching to it.
 
-When set to a function's symbol, that function will be called
-with the switched-to project's root directory as its single
-argument.
+When set to a function's symbol, that function will be called with the
+switched-to project's root directory as its single argument.
 
 When non-nil, show the project dispatch menu instead."
   :group 'otpp
@@ -186,6 +185,7 @@ inside, a Repo workspace, etc)."
 
 (defcustom otpp-post-change-tab-root-functions nil
   "List of functions to call after changing the `otpp-root-dir' of a tab.
+
 This hook is run at the end of the function `otpp-change-tab-root-dir'.
 The current tab is supplied as an argument."
   :group 'otpp
@@ -195,14 +195,15 @@ The current tab is supplied as an argument."
 (defcustom otpp-project-name-function #'otpp-project-name
   "Derive project name from a directory.
 
-This function receives a directory and return the project name
-for the project that includes this path."
+This function receives a directory and return the project name for the
+project that includes this path."
   :group 'otpp
   :type '(choice function (symbol nil))
   :version "1.1.0")
 
 (defcustom otpp-allow-detach-projectless-buffer nil
-  "Allow detaching a buffer to a new tab even if it is not part of a project.
+  "Allow detaching a buffer to a new tab even if it is projectless.
+
 This can also be set to a function that receives the buffer, and return
 non-nil if we should allow the tab creation."
   :type '(choice boolean function)
@@ -225,6 +226,7 @@ non-nil if we should allow the tab creation."
     ;; projection-dape
     projection-dape)
   "A list of commands to be advised in `otpp-override-mode'.
+
 These commands will be run with `default-directory' set the to current's
 tab directory."
   :type '(repeat function)
@@ -243,6 +245,7 @@ tab directory."
 
 (defcustom otpp-rename-the-initial-tab t
   "Rename the initial tab to the default name.
+
 When `otpp-mode' is enabled and only one tab exists, rename it to
 `otpp-default-tab-name'."
   :type 'boolean
@@ -273,6 +276,7 @@ When `otpp-mode' is enabled and only one tab exists, rename it to
 
 (defun otpp-uniq--unique-elements (dir1 dir2 &optional base1 base2)
   "Return unique elements of DIR1 and DIR2.
+
 Consider custom base names BASE1 and BASE2 when non-nil."
   (let* ((els1 (otpp-uniq--get-dir-elements dir1))
          (els2 (otpp-uniq--get-dir-elements dir2)))
@@ -289,6 +293,7 @@ Consider custom base names BASE1 and BASE2 when non-nil."
 
 (cl-defun otpp-uniq--create-or-update (dir &key base rename-fn (map 'otpp-uniq-map-default))
   "Create or update a unique element for DIR.
+
 For the meaning of :MAP, :RENAME-FN and :BASE, see `otpp-uniq-register'."
   (let* ((dir (expand-file-name dir))
          (dir-name (file-name-nondirectory (directory-file-name (expand-file-name dir))))
@@ -335,8 +340,10 @@ For the meaning of :MAP, :RENAME-FN and :BASE, see `otpp-uniq-register'."
 
 (cl-defun otpp-uniq-update-all (&key rename-fn (map 'otpp-uniq-map-default))
   "Update all unique names.
+
 This function can be called after manually modifying the hash table used
 to keep track of the unique names.
+
 For the meaning of :MAP and :RENAME-FN, see `otpp-uniq-register'."
   (let ((unique-map (eval map)))
     (dolist (path (hash-table-keys unique-map)) ; Update all the names
@@ -345,11 +352,14 @@ For the meaning of :MAP and :RENAME-FN, see `otpp-uniq-register'."
 ;;;###autoload
 (cl-defun otpp-uniq-register (dir &key base rename-fn (map 'otpp-uniq-map-default))
   "Make a unique name derived from DIR.
+
 If the :BASE string is provided, it will be used as a basis for the
 unique name, otherwise, this will be calculated from the directory name
 of DIR.
+
 The :MAP is a symbol for the hash-table used to register the names, all
 names will be renamed accordingly when needed.
+
 The :RENAME-FN is a function of signature (OLD NEW), called before renaming
 the hash-table elements."
   (append
@@ -447,6 +457,7 @@ For the meaning of :MAP and :RENAME-FN, see `otpp-uniq-register'."
 
 (defun otpp--select-or-create-tab-root-dir (dir)
   "Select or create the tab with root directory DIR.
+
 Returns non-nil if a new tab was created, and nil otherwise."
   (if-let* ((tab (car (otpp-find-tabs-by-root-dir dir))))
       (prog1 nil
@@ -476,7 +487,7 @@ is correct:
   and the directory containing the `dir-locals-file').
 - `otpp-strictly-obey-dir-locals' is a *not* a function and it is
   non-nil.
-- The `dir-locals-file' file is stored in the project root, a.k.a.,
+- The `dir-locals-file' file is stored in the project root, i.e.,
   the project root is the same as the `dir-locals-file' directory.
 
 Then, this function checks in this order:
@@ -498,8 +509,7 @@ When DIR isn't part of any project, returns nil."
       (when-let* ((dir-locals-root (car (ensure-list (dir-locals-find-file (expand-file-name "dummy-file" dir)))))
                   ((or (equal (expand-file-name root) (expand-file-name dir-locals-root))
                        (otpp--funcall-or-value otpp-strictly-obey-dir-locals dir root dir-locals-root))))
-        ;; NOTE: Read the local variables, but don't apply them.
-        (hack-dir-local-variables))
+        (hack-dir-local-variables)) ; Read the local variables, but don't apply them.
       (or (cl-some (lambda (var)
                      (or (alist-get var dir-local-variables-alist)
                          (alist-get var file-local-variables-alist)))
@@ -518,6 +528,7 @@ When DIR isn't part of any project, returns nil."
 ;;;###autoload
 (defun otpp-detach-buffer-to-tab (buffer)
   "Create or switch to the tab corresponding to the project of BUFFER.
+
 When called with the a prefix, it asks for the buffer."
   (interactive (list (if current-prefix-arg (read-buffer "Select the buffer (leave empty for an unnamed buffer): ") (current-buffer))))
   (with-current-buffer buffer
@@ -541,8 +552,10 @@ When called with the a prefix, it asks for the buffer."
 ;;;###autoload
 (defun otpp-change-tab-root-dir (dir &optional tab-number)
   "Change the `otpp-root-dir' attribute to DIR.
+
 If if the absolute TAB-NUMBER is provided, set it, otherwise, set the
 current tab.
+
 When DIR is empty or nil, delete it from the tab."
   (interactive
    (list (completing-read
@@ -570,12 +583,12 @@ When DIR is empty or nil, delete it from the tab."
 (defun otpp-prefix ()
   "Run the next command in the tab's root directory (or not!).
 
-The actual behavior depends on `otpp-override-mode'. For
-instance, when you execute \\[otpp-prefix] followed by
-\\[project-find-file], if the `otpp-override-mode' is
-enabled, this will run the `project-find-file' command in the
-`default-directory', otherwise, it will bind the `default-directory' to
-the current's tab directory before executing `project-find-file'."
+The actual behavior depends on `otpp-override-mode'. For instance, when
+you execute \\[otpp-prefix] followed by \\[project-find-file], if the
+`otpp-override-mode' is enabled, this will run the `project-find-file'
+command in the `default-directory', otherwise, it will bind the
+`default-directory' to the current's tab directory before executing
+`project-find-file'."
   (interactive)
   (when-let* ((command (key-binding
                         (read-key-sequence
@@ -600,10 +613,9 @@ the current's tab directory before executing `project-find-file'."
 (defun otpp--project-current-a (orig-fn &rest args)
   "Call ORIG-FN with ARGS, set the `otpp-root-dir' accordingly.
 
-Does nothing unless the user was allowed to be prompted for a
-project if needed (that is, the `maybe-prompt' argument in the
-advised function call was non-nil), or if they did not select a
-project when prompted.
+Does nothing unless the user was allowed to be prompted for a project if
+needed (that is, the `maybe-prompt' argument in the advised function
+call was non-nil), or if they did not select a project when prompted.
 
 Does nothing if the current tab belongs to the selected project.
 
@@ -619,6 +631,7 @@ Otherwise, select or create the tab of the selected project."
 
 (defun otpp--project-switch-project-a (orig-fn &rest args)
   "Switch to the right tab after switching to a project.
+
 Calls ORIG-FN based on ARGS."
   (let ((proj-dir (expand-file-name (or (car args) (when-let* ((proj (project-current t))) (project-root proj)))))
         (def-calling-dir default-directory)) ; `otpp--select-or-create-tab-root-dir' changes the `default-directory'
