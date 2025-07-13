@@ -41,8 +41,8 @@ this:
 - When you switch to a project `project-switch-project` (bound by default to
   `C-x p p`), `otpp` will create a tab with the project name.
 
-- When you kill a project with all its buffers with `project-kill-buffers`, the
-  tab is closed.
+- When you kill a project with all its buffers with `project-kill-buffers`,
+  the tab is closed.
 
 - Lets say you've switched to the project under
   `/home/user/project1/backend/`, `otpp` will create a tab named `backend`
@@ -95,8 +95,8 @@ In my workflow, I would like to always restrict the commands like
 current tab, even if I'm visiting a file which is not part of this project.
 If you like this behavior, you can enable the `otpp-override-mode`. This mode
 will advice all the commands defined in `otpp-override-commands` to be ran in
-the current's tab root directory (_a.k.a._, in the project bound to the
-current tab).
+the current's tab root directory (_i.e._, in the project bound to the current
+tab).
 
 When `otpp-override-mode` is enabled, the `otpp-prefix` acts inversely. While
 all `otpp-override-commands` are restricted to the current's tab project by
@@ -145,9 +145,8 @@ have a good reason to kill it.
 
 Whether to reconnect a disconnected tab when switching to it.
 
-When set to a function's symbol, that function will be called
-with the switched-to project's root directory as its single
-argument.
+When set to a function's symbol, that function will be called with the
+switched-to project's root directory as its single argument.
 
 When non-nil, show the project dispatch menu instead.
 
@@ -170,6 +169,7 @@ inside, a Repo workspace, etc).
 #### `otpp-post-change-tab-root-functions`
 
 List of functions to call after changing the `otpp-root-dir` of a tab.
+
 This hook is run at the end of the function `otpp-change-tab-root-dir`.
 The current tab is supplied as an argument.
 
@@ -177,18 +177,20 @@ The current tab is supplied as an argument.
 
 Derive project name from a directory.
 
-This function receives a directory and return the project name
-for the project that includes this path.
+This function receives a directory and return the project name for the
+project that includes this path.
 
 #### `otpp-allow-detach-projectless-buffer`
 
-Allow detaching a buffer to a new tab even if it is not part of a project.
+Allow detaching a buffer to a new tab even if it is projectless.
+
 This can also be set to a function that receives the buffer, and return
 non-nil if we should allow the tab creation.
 
 #### `otpp-override-commands`
 
 A list of commands to be advised in `otpp-override-mode`.
+
 These commands will be run with `default-directory` set the to current's
 tab directory.
 
@@ -199,6 +201,7 @@ The default tab name to use when the last otpp tab is killed.
 #### `otpp-rename-the-initial-tab`
 
 Rename the initial tab to the default name.
+
 When `otpp-mode` is enabled and only one tab exists, rename it to
 `otpp-default-tab-name`.
 
@@ -224,7 +227,7 @@ is correct:
   and the directory containing the `dir-locals-file`).
 - `otpp-strictly-obey-dir-locals` is a *not* a function and it is
   non-nil.
-- The `dir-locals-file` file is stored in the project root, a.k.a.,
+- The `dir-locals-file` file is stored in the project root, i.e.,
   the project root is the same as the `dir-locals-file` directory.
 Then, this function checks in this order:
 1. If the local variable `otpp-project-name` is set locally in the
@@ -252,12 +255,12 @@ When DIR is empty or nil, delete it from the tab.
 #### `(otpp-prefix)`
 
 Run the next command in the tab's root directory (or not!).
-The actual behavior depends on `otpp-override-mode`. For
-instance, when you execute M-x otpp-prefix followed by
-C-x p f, if the `otpp-override-mode` is
-enabled, this will run the `project-find-file` command in the
-`default-directory`, otherwise, it will bind the `default-directory` to
-the current's tab directory before executing `project-find-file`.
+The actual behavior depends on `otpp-override-mode`. For instance, when
+you execute M-x otpp-prefix followed by C-x p f, if the
+`otpp-override-mode` is enabled, this will run the `project-find-file`
+command in the `default-directory`, otherwise, it will bind the
+`default-directory` to the current's tab directory before executing
+`project-find-file`.
 
 -----
 <div style="padding-top:15px;color: #d0d0d0;">
