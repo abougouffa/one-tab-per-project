@@ -510,10 +510,13 @@ When DIR isn't part of any project, returns nil."
                   ((or (equal (expand-file-name root) (expand-file-name dir-locals-root))
                        (otpp--funcall-or-value otpp-strictly-obey-dir-locals dir root dir-locals-root))))
         (hack-dir-local-variables)) ; Read the local variables, but don't apply them.
-      (or (cl-some (lambda (var)
-                     (or (alist-get var dir-local-variables-alist)
-                         (alist-get var file-local-variables-alist)))
-                   '(otpp-project-name project-vc-name))
+      (or (and
+           ;; BUG: `cascading-dir-locals-mode' can cause nested projects to have the same name
+           (not (bound-and-true-p cascading-dir-locals-mode))
+           (cl-some (lambda (var)
+                      (or (alist-get var dir-local-variables-alist)
+                          (alist-get var file-local-variables-alist)))
+                    '(otpp-project-name project-vc-name)))
           (file-name-nondirectory (directory-file-name root))))))
 
 (defun otpp-find-tabs-by-root-dir (dir)
