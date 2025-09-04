@@ -216,7 +216,7 @@ non-nil if we should allow the tab creation."
     project-shell project-eshell project-dired project-compile
     project-find-regexp project-query-replace-regexp
     ;; consult
-    consult-grep consult-find consult-fd consult-ripgrep
+    consult-grep consult-find consult-fd consult-ripgrep consult-project-buffer
     ;; rg
     rg-project
     ;; magit
