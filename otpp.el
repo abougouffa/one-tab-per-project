@@ -210,6 +210,22 @@ non-nil if we should allow the tab creation."
   :group 'otpp
   :version "2.0.0")
 
+(defcustom otpp-advice-commands
+  '(
+     ;; project
+     project-current project-switch-project project-kill-buffers)
+  "A list of commands to be advised in `otpp-mode'.
+
+If in a project, these commands will be run with `default-directory' set
+to the current tab's directory."
+  :type '(repeat function)
+  :group 'otpp
+  :set (lambda (symbol value)
+         (let ((was-enabled (bound-and-true-p otpp-mode)))
+           (when was-enabled (otpp-mode -1))
+           (set-default symbol value)
+           (when was-enabled (otpp-mode 1)))))
+
 (defcustom otpp-override-commands
   '(;; project
     project-find-file project-find-dir project-kill-buffers project-switch-to-buffer
@@ -669,6 +685,18 @@ Calls ORIG-FN based on ARGS."
         (bury-buffer))
     (funcall fn buffer)))
 
+;;; Advices for the integration with `find-file'
+
+(defun otpp--find-file-a (orig-fn &rest args)
+  (let ((proj-curr (project-current nil (car args))))
+    (message "otpp-find-file proj-curr %s" proj-curr)
+    (cond
+      (proj-curr
+        (project-switch-project (caddr proj-curr))
+        (apply orig-fn args))
+      (t
+        (apply orig-fn args)))))
+
 
 ;;; OTPP modes
 
@@ -677,7 +705,7 @@ Calls ORIG-FN based on ARGS."
   "Automatically create a tab per project, name them uniquely."
   :group 'otpp
   :global t
-  (dolist (fn '(project-current project-switch-project project-kill-buffers))
+  (dolist (fn otpp-advice-commands)
     (let ((advice-fn (intern (format "otpp--%s-a" fn))))
       (if otpp-mode
           (advice-add fn :around advice-fn)
