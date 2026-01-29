@@ -210,20 +210,17 @@ non-nil if we should allow the tab creation."
   :group 'otpp
   :version "2.0.0")
 
-(defcustom otpp-advice-commands
-  '(;; project
-    project-current project-switch-project project-kill-buffers)
-  "A list of commands to be advised in `otpp-mode'.
-
-If in a project, these commands will be run with `default-directory' set
-to the current tab's directory."
-  :type '(repeat function)
+(defcustom otpp-find-file-integration nil
+  "When non-nil, if a file is opened, switch to its project and tab.
+Create the tab if the project isn't already open."
+  :type 'boolean
   :group 'otpp
   :set (lambda (symbol value)
          (let ((was-enabled (bound-and-true-p otpp-mode)))
            (when was-enabled (otpp-mode -1))
            (set-default symbol value)
-           (when was-enabled (otpp-mode 1)))))
+           (when was-enabled (otpp-mode 1))))
+  :version "3.4.0")
 
 (defcustom otpp-override-commands
   '(;; project
@@ -684,16 +681,25 @@ Calls ORIG-FN based on ARGS."
         (bury-buffer))
     (funcall fn buffer)))
 
+
 ;;; Advices for the integration with `find-file'
 
 (defun otpp--find-file-a (orig-fn &rest args)
-  (let ((proj-curr (project-current nil (car args))))
-    (message "otpp-find-file proj-curr %s" proj-curr)
-    (cond (proj-curr
-           (project-switch-project (caddr proj-curr))
-           (apply orig-fn args))
-          (t
-           (apply orig-fn args)))))
+  "Advice `find-file'.
+
+The behavior is like this:
+
+When opening a file that belongs to another project, switch to that
+project (switchs to its tab). If the project isn't open, open it and
+create the project's tab.
+
+Calls ORIG-FN with ARGS."
+  (when-let* ((proj-curr (project-current nil (file-name-directory (car args)))))
+    (message (file-name-directory (car args)))
+    (let ((project-switch-commands #'ignore))
+      (project-switch-project (project-root proj-curr))))
+  (apply orig-fn args))
+
 
 ;;; OTPP modes
 
@@ -702,17 +708,21 @@ Calls ORIG-FN based on ARGS."
   "Automatically create a tab per project, name them uniquely."
   :group 'otpp
   :global t
-  (dolist (fn otpp-advice-commands)
+  (dolist (fn '(project-current project-switch-project project-kill-buffers))
     (let ((advice-fn (intern (format "otpp--%s-a" fn))))
       (if otpp-mode
           (advice-add fn :around advice-fn)
         (advice-remove fn advice-fn))))
   (if otpp-mode
       (progn
+        (when otpp-find-file-integration
+          (advice-add 'find-file :around #'otpp--find-file-a))
         (advice-add 'kill-buffer :around #'otpp--bury-on-kill-buffer-in-multiple-tabs-a)
         ;; Rename the first tab to default name if needed
         (otpp--set-default-tab-name)
         (add-hook 'server-after-make-frame-hook #'otpp--set-default-tab-name))
+    (when otpp-find-file-integration
+      (advice-remove 'find-file #'otpp--find-file-a))
     (advice-remove 'kill-buffer #'otpp--bury-on-kill-buffer-in-multiple-tabs-a)
     (remove-hook 'server-after-make-frame-hook #'otpp--set-default-tab-name)))
 
