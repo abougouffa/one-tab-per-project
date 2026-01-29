@@ -187,6 +187,11 @@ Allow detaching a buffer to a new tab even if it is projectless.
 This can also be set to a function that receives the buffer, and return
 non-nil if we should allow the tab creation.
 
+#### `otpp-find-file-integration`
+
+When non-nil, if a file is opened, switch to its project and tab.
+Create the tab if the project isn't already open.
+
 #### `otpp-override-commands`
 
 A list of commands to be advised in `otpp-override-mode`.
