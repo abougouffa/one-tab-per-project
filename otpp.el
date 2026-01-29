@@ -721,8 +721,7 @@ Calls ORIG-FN with ARGS."
         ;; Rename the first tab to default name if needed
         (otpp--set-default-tab-name)
         (add-hook 'server-after-make-frame-hook #'otpp--set-default-tab-name))
-    (when otpp-find-file-integration
-      (advice-remove 'find-file #'otpp--find-file-a))
+    (advice-remove 'find-file #'otpp--find-file-a)
     (advice-remove 'kill-buffer #'otpp--bury-on-kill-buffer-in-multiple-tabs-a)
     (remove-hook 'server-after-make-frame-hook #'otpp--set-default-tab-name)))
 
