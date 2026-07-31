@@ -181,6 +181,13 @@ List of functions to call after changing the `otpp-root-dir` of a tab.
 This hook is run at the end of the function `otpp-change-tab-root-dir`.
 The current tab is supplied as an argument.
 
+#### `otpp-tab-group-name-hook`
+
+A hook that that return the tab group name for automatic grouping.
+
+The first function that returns non-nil will determine the tab group
+name.
+
 #### `otpp-project-name-function`
 
 Derive project name from a directory.
