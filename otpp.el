@@ -5,8 +5,8 @@
 ;; Author: Abdelhak Bougouffa (rot13 "nobhtbhssn@srqbencebwrpg.bet")
 ;; URL: https://github.com/abougouffa/one-tab-per-project
 ;; Created: July 07, 2024
-;; Modified: June 06, 2026
 ;; Version: 3.5.4
+;; Modified: July 31, 2026
 ;; Package-Requires: ((emacs "28.1") (compat "29.1"))
 ;; Keywords: convenience
 ;; SPDX-License-Identifier: GPL-3.0
@@ -204,6 +204,15 @@ The current tab is supplied as an argument."
   :group 'otpp
   :type 'hook
   :version "1.0.1")
+
+(defcustom otpp-tab-group-name-hook nil
+  "A hook that that return the tab group name for automatic grouping.
+
+The first function that returns non-nil will determine the tab group
+name."
+  :group 'otpp
+  :type 'hook
+  :version "3.6.0")
 
 (defcustom otpp-project-name-function #'otpp-project-name
   "Derive project name from a directory.
@@ -627,7 +636,10 @@ When DIR is empty or nil, delete it from the tab."
        :base (and otpp-project-name-function (funcall otpp-project-name-function tab-new-root-dir))
        :map 'otpp--unique-tabs-map))
     (otpp--update-all-tabs) ; Update all tabs
-    (run-hook-with-args 'otpp-post-change-tab-root-functions tab)))
+    (run-hook-with-args 'otpp-post-change-tab-root-functions tab)
+    ;; Apply the tab group name
+    (when-let* ((group (run-hook-with-args-until-success 'otpp-tab-group-name-hook)))
+      (tab-bar-change-tab-group group))))
 
 (defun otpp-prefix ()
   "Run the next command in the tab's root directory (or not!).
