@@ -112,7 +112,7 @@ function, `otpp-skip-external-buffers`.
 
 ```emacs-lisp
   ;; Apply the filter to skip non-current project buffers
-  (setq switch-to-prev-buffer-skip #'otpp-skip-external-buffers)
+  (setopt switch-to-prev-buffer-skip #'otpp-skip-external-buffers)
 ```
 
 ### Similar packages
