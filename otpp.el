@@ -116,7 +116,7 @@
 ;;
 ;; ```emacs-lisp
 ;;   ;; Apply the filter to skip non-current project buffers
-;;   (setq switch-to-prev-buffer-skip #'otpp-skip-external-buffers)
+;;   (setopt switch-to-prev-buffer-skip #'otpp-skip-external-buffers)
 ;; ```
 ;;
 ;;; Similar packages
@@ -328,13 +328,14 @@ When `otpp-mode' is enabled and only one tab exists, rename it to
 
 ;;; Helpers for generating unique projects names from directories
 
-(defun otpp-skip-external-buffers (window buffer _bury-or-kill)
-    "Skip BUFFER in WINDOW if we are in a project and BUFFER doesn't belong to it.
+(defun otpp-skip-external-buffers (window buffer bury-or-kill)
+  "Skip BUFFER in WINDOW if we are in a project and BUFFER doesn't belong to it.
 To be used as a value for `switch-to-prev-buffer-skip`."
-    (when-let* ((current-pr (and (otpp-get-tab-root-dir) ; The current tab is an otpp tab
-                                 (project-current))))
-      ;; We are in a project: skip any buffer not in this project
-      (not (memq buffer (project-buffers current-pr)))))
+  (when-let* ((proj (and (not bury-or-kill) ; Otherwise, it can enter an infinite loop in some cases
+                         (otpp-get-tab-root-dir) ; The current tab is an otpp tab
+                         (project-current))))
+    ;; We are in a project: skip any buffer not in this project
+    (not (memq buffer (project-buffers proj)))))
 
 (defun otpp-uniq--get-dir-elements (dir)
   "Get elements for the DIR path."
