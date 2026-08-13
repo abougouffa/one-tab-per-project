@@ -107,7 +107,18 @@
 ;; default, running a command with `otpp-prefix' will disable this behavior,
 ;; which results of the next command to be run in the `default-directory'
 ;; depending on the visited buffer.
-
+;;
+;; When working within a project with `otpp-mode`, it is possible to switch
+;; to buffers that belong to another project, as this is the default behaviour
+;; of `next-buffer` or `prev-buffer`.  You can further constrain `otpp-mode`
+;; to filter out non current project buffers, by leveraging the helper filter
+;; function, `otpp-skip-external-buffers`.
+;;
+;; ```emacs-lisp
+;;   ;; Apply the filter to skip non-current project buffers
+;;   (setq switch-to-prev-buffer-skip #'otpp-skip-external-buffers)
+;; ```
+;;
 ;;; Similar packages
 
 ;; This section is not exhaustive, it includes only the packages that I used
@@ -316,6 +327,14 @@ When `otpp-mode' is enabled and only one tab exists, rename it to
 (put 'otpp-project-name 'permanent-local-hook t)
 
 ;;; Helpers for generating unique projects names from directories
+
+(defun otpp-skip-external-buffers (window buffer _bury-or-kill)
+    "Skip BUFFER in WINDOW if we are in a project and BUFFER doesn't belong to it.
+To be used as a value for `switch-to-prev-buffer-skip`."
+    (when-let* ((current-pr (and (otpp-get-tab-root-dir) ; The current tab is an otpp tab
+                                 (project-current))))
+      ;; We are in a project: skip any buffer not in this project
+      (not (memq buffer (project-buffers current-pr)))))
 
 (defun otpp-uniq--get-dir-elements (dir)
   "Get elements for the DIR path."
